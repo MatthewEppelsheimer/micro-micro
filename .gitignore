@@ -1,0 +1,17 @@
+# Dependencies
+
+node_modules
+
+# Compiled
+
+js
+
+# OS files
+
+.DS_Store
+
+# Development & IDE files
+
+.idea
+*.swp
+DEVLOG.md

@@ -1,0 +1,31 @@
+{
+  "name": "microservice-ipinfo",
+  "version": "0.1.0",
+  "description": "Performant Node.js REST API to get info for a domain or IP address, for deployment to Heroku",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc --outDir js",
+    "build:watch": "tsc --watch --outDir js",
+    "prettier": "prettier --write \"**/*.{json,ts}\"",
+    "test": "echo 'Not implemented'"
+  },
+  "keywords": [
+    "ip",
+    "microservice",
+    "rest"
+  ],
+  "author": "Matthew Eppelsheimer",
+  "license": "MIT",
+  "devDependencies": {
+    "@swimlane/prettier-config-swimlane": "^3.0.3",
+    "@tsconfig/recommended": "^1.0.1",
+    "@types/node": "^14.14.10",
+    "@typescript-eslint/eslint-plugin": "^4.9.0",
+    "@typescript-eslint/parser": "^4.9.0",
+    "eslint": "^7.14.0",
+    "eslint-config-prettier": "^6.15.0",
+    "eslint-plugin-prettier": "^3.1.4",
+    "prettier": "^2.2.1",
+    "typescript": "^4.1.2"
+  }
+}

@@ -7,6 +7,7 @@
     "build": "tsc --outDir js",
     "build:watch": "tsc --watch --outDir js",
     "prettier": "prettier --write \"**/*.{json,ts}\"",
+    "serve": "node js/server.js",
     "test": "echo 'Not implemented'"
   },
   "keywords": [
@@ -19,6 +20,7 @@
   "devDependencies": {
     "@swimlane/prettier-config-swimlane": "^3.0.3",
     "@tsconfig/recommended": "^1.0.1",
+    "@types/express": "^4.17.9",
     "@types/node": "^14.14.10",
     "@typescript-eslint/eslint-plugin": "^4.9.0",
     "@typescript-eslint/parser": "^4.9.0",
@@ -27,5 +29,9 @@
     "eslint-plugin-prettier": "^3.1.4",
     "prettier": "^2.2.1",
     "typescript": "^4.1.2"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "reflect-metadata": "^0.1.13"
   }
 }

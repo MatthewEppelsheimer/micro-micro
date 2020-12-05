@@ -9,7 +9,7 @@
  * - add its name the `AvailableServices` array under imports, below
  * - Add it to `defaultServicesString` below, if it belongs there
  */
-import IPValidationService, { validateIP } from './ip-validation';
+import IPValidationService from './ip-validation';
 
 /**
  * Available Services
@@ -39,9 +39,6 @@ const defaultServicesArray = defaultServicesString.split(',');
 export const DefaultServices: Array<AvailableServiceName> = (defaultServicesArray as Array<AvailableServiceName>).filter(
   val => AvailableServices.includes(val as AvailableServiceName)
 );
-
-// Utilities
-export { validateIP };
 
 // Services
 export { IPValidationService };

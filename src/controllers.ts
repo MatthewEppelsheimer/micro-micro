@@ -73,16 +73,6 @@ type RouteDecoratorFactory = (path: string, requestType: SupportedRequestTypes) 
  */
 type RouteMethodDecoratorFactory = (path: string) => RouteDecorator;
 
-/**
- * Ensure `routes` metadata initialized for decorated controller
- */
-const ensureRoutesMetadataInitialized = (target: any): void => {
-  if (!Reflect.hasMetadata('routes', target.constructor)) {
-    const routes: RoutesMetaData = [];
-    Reflect.defineMetadata('routes', routes, target.constructor);
-  }
-};
-
 // ================================
 // Validate how decorators are used
 // ================================
@@ -117,6 +107,34 @@ const validateDecoratorPrefix = (prefix: string, decoratorName: string) => {
       `@${decoratorName} decorator called with invalid \`prefix\` "${prefix}". It must begin with a slash, must contain at least one letter, and may only contain lowercase letters and slashes (-).`
     );
   }
+};
+
+// =========
+// Utilities
+// =========
+
+/**
+ * Ensure `routes` metadata initialized for decorated controller
+ *
+ * Only for use inside controller decorators. Allows any decorator call execution order.
+ */
+const ensureRoutesMetadataInitialized = (target: any): void => {
+  if (!Reflect.hasMetadata('routes', target.constructor)) {
+    const routes: RoutesMetaData = [];
+    Reflect.defineMetadata('routes', routes, target.constructor);
+  }
+};
+
+/**
+ * Get reflection metadata for a decorated endpoint controller
+ *
+ * @param target {Controller} The decorated endpoint controller
+ */
+export const getControllerMetadata = (target: Controller): ControllerMetaData => {
+  const prefix: PrefixMetaData = Reflect.getMetadata('prefix', target.constructor);
+  const routes: RoutesMetaData = Reflect.getMetadata('routes', target.constructor);
+
+  return { prefix, routes };
 };
 
 // ==============================
@@ -169,20 +187,4 @@ export const GET: RouteMethodDecoratorFactory = (path: string = '/'): RouteDecor
   return (target, methodName: string): void => {
     Route(path, 'get')(target, methodName);
   };
-};
-
-// =========
-// Utilities
-// =========
-
-/**
- * Get reflection metadata for a decorated endpoint controller
- *
- * @param target {Controller} The decorated endpoint controller
- */
-export const getControllerMetadata = (target: Controller): ControllerMetaData => {
-  const prefix: PrefixMetaData = Reflect.getMetadata('prefix', target.constructor);
-  const routes: RoutesMetaData = Reflect.getMetadata('routes', target.constructor);
-
-  return { prefix, routes };
 };

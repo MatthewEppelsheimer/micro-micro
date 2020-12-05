@@ -8,11 +8,15 @@ import 'reflect-metadata';
 import express from 'express';
 
 import { getControllerMetadata } from './controllers';
-import HelloController from './endpoints/hello';
+import { HelloController, IPServicesController } from './endpoints';
+import './services';
 
 const PORT = process.env.PORT || 3000;
 
 const app = express();
+
+// Middleware to parse request body JSON
+app.use(express.json());
 
 const endpoints = [HelloController];
 

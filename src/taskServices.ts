@@ -45,7 +45,7 @@ export type TaskServiceConfig = {
   name: string; // Unique name of the service
   description: string; // API user-facing description of provided service
   returnType: string | { [x: string]: any }; //
-  requiredData?: { [x: string]: string }; // Data (params) required, if any
+  requiredData?: { [x: string]: any }; // Data (params) required, if any
 };
 
 export abstract class TaskService {
@@ -136,8 +136,7 @@ type TaskServiceDecoratorFactory = (config: TaskServiceConfig) => TaskServiceDec
 
 export const Service: TaskServiceDecoratorFactory = (config: TaskServiceConfig): TaskServiceDecorator => {
   return (target: TaskServiceConstructor): void => {
-    const { name, description, returnType } = config;
-    const requiredData = config.requiredData || false;
+    const { name, description, requiredData, returnType } = config;
 
     // Invalidate decorator usage if any required config strings are empty
     if (!name || !description || !returnType) {
@@ -160,7 +159,8 @@ export const getTaskServiceMetadata = (target: TaskService): TaskServiceConfig =
   const metadata = {
     name,
     description,
-    returnType
+    returnType,
+    requiredData: undefined
   };
 
   if (requiredData) {

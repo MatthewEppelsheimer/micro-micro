@@ -13,6 +13,14 @@ import { hashHex } from '../utils';
  */
 @Endpoint('/ip')
 export default class IPServicesController extends EndpointController {
+  #queue: { add: (task: Task) => void };
+
+  constructor() {
+    super();
+
+    // @TODO deferred improvement: Create new decorator to dependency-inject this
+    this.#queue = { add: (task: Task): void => {} }; // @TODO WIPPOINT shim for Bull
+  }
   /**
    * Respond with API services available and instructions for their use
    *
@@ -73,6 +81,7 @@ export default class IPServicesController extends EndpointController {
     const jobId = hashHex(new Date().toISOString());
 
     // Send tasks to queue, for workers on another process
+    const tasksToQueue: Task[] = [];
     serviceTasks.forEach((service, index) => {
       const id = hashHex(`${jobId}${index}`);
 
@@ -80,17 +89,16 @@ export default class IPServicesController extends EndpointController {
         ip
       };
 
-      const task: Task = {
+      tasksToQueue.push({
         id,
         jobId,
         service,
         data
-      };
+      });
     });
 
     /**
      *  @TODO…
-     *    - subscribe to Redis updates & respond, packaging response when done
      *    - try/catch with 500 response
      */
 
@@ -103,12 +111,13 @@ export default class IPServicesController extends EndpointController {
     const wait = true;
 
     return wait
-      ? this.#waitForTasks(request, response, (serviceTasks as unknown) as typeof AvailableServiceNames)
-      : this.#startTasks(request, response, (serviceTasks as unknown) as typeof AvailableServiceNames);
+      ? this.#waitForTasks(request, response, tasksToQueue)
+      : this.#startTasks(request, response, tasksToQueue);
   };
 
-  #waitForTasks = (request: Request, response: Response, tasks: typeof AvailableServiceNames): RouteHandlerResponse => {
-    return new RouteHandlerResponse(501, `WIP`);
+  // @TODO docs
+  #queueTask = (task: Task): void => {
+    this.#queue.add(task);
   };
 
   /**
@@ -118,12 +127,21 @@ export default class IPServicesController extends EndpointController {
    *
    * @TODO
    */
-  #startTasks = (
-    _request: Request,
-    _response: Response,
-    _tasks: typeof AvailableServiceNames
-  ): RouteHandlerResponse => {
+  #startTasks = (_request: Request, _response: Response, _tasks: Task[]): RouteHandlerResponse => {
     return new RouteHandlerResponse(500, `Not yet implemented`);
+  };
+
+  // @TODO docs
+  #waitForTasks = (request: Request, response: Response, tasks: Task[]): RouteHandlerResponse => {
+    /**
+     *  @TODO…
+     *    - subscribe to queue updates & respond, BEFORE calling #queueTask() below
+     */
+
+    tasks.forEach(task => {
+      this.#queueTask(task);
+    });
+    return new RouteHandlerResponse(501, `WIP`);
   };
 
   // Validate that the data each service requires is available with the request

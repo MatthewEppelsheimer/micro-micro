@@ -120,9 +120,9 @@ export abstract class TaskService {
       }
 
       try {
-        return this.processTask(task);
+        resolve(this.processTask(task));
       } catch (error) {
-        return Promise.reject(new TaskResult(id, 'fail', { issues: `${error}` }));
+        return reject(new TaskResult(id, 'fail', { issues: `${error}` }));
       }
     });
   };

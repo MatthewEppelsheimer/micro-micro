@@ -3,16 +3,11 @@
  */
 
 // ====================
-// Types and Interfaces
+// Types and Abstract for EndpointController
 // ====================
 
-/**
- * Shape of Endpoint controller classes
- *
- * Though perhaps seemingly pointless, ControllerConstructor requires this, plus it helps ensure
- * consistency throughout the rest of this module.
- */
-export interface Controller {}
+import { isIPValid } from './utils';
+import construct = Reflect.construct;
 
 /**
  * Type of endpoint controllers' `prefix` metadata
@@ -33,9 +28,49 @@ export type ControllerMetaData = {
 };
 
 /**
+ * Route handler response data object factory
+ */
+export class RouteHandlerResponse {
+  readonly data: { [x: string]: any };
+  readonly error: boolean;
+  readonly statusCode: number;
+
+  constructor(statusCode: number, data: string | { [x: string]: any }) {
+    this.data = typeof data === 'string' ? { message: data } : data;
+    this.error = [
+      400, // bad request
+      404, // not found
+      405, // method not allowed
+      500, // internal server error
+      501, // (method) not implemented
+      503, // service unavailable (e.g. traffic overload or maintenance
+      504 // gateway timeout (e.g. upstream service)
+    ].includes(statusCode);
+
+    this.statusCode = statusCode;
+  }
+}
+
+/**
+ * Shape of Endpoint controller classes
+ */
+export abstract class EndpointController {
+  /**
+   * Is string a valid IP address
+   * @TODO rather pointless abstraction of isIPValid export from utils.ts; consider dropping
+   */
+  protected isIPValid = (ip: string): boolean => {
+    if (!ip) {
+      return false;
+    }
+    return isIPValid(ip);
+  };
+}
+
+/**
  * Constructor type for endpoints controllers
  */
-type ControllerConstructor = { new (...args: any[]): Controller };
+type ControllerConstructor = { new (...args: any[]): EndpointController };
 
 /**
  * Type of Endpoint decorator
@@ -128,9 +163,9 @@ const ensureRoutesMetadataInitialized = (target: any): void => {
 /**
  * Get reflection metadata for a decorated endpoint controller
  *
- * @param target {Controller} The decorated endpoint controller
+ * @param target {EndpointController} The decorated endpoint controller
  */
-export const getControllerMetadata = (target: Controller): ControllerMetaData => {
+export const getControllerMetadata = (target: EndpointController): ControllerMetaData => {
   const prefix: PrefixMetaData = Reflect.getMetadata('prefix', target.constructor);
   const routes: RoutesMetaData = Reflect.getMetadata('routes', target.constructor);
 

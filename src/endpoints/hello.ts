@@ -2,13 +2,13 @@
  * 'Hello World' Endpoint
  */
 import { Request, Response } from 'express';
-import { Controller, Endpoint, GET } from '../controllers';
+import { EndpointController, Endpoint, GET } from '../controllers';
 
 /**
  * Hello World endpoint controller
  */
 @Endpoint('/hello')
-export default class HelloController implements Controller {
+export default class HelloController extends EndpointController {
   @GET('/hello')
   hello = (_req: Request, response: Response): void => {
     response.send('Hello world');

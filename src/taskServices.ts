@@ -160,6 +160,11 @@ export const Service: TaskServiceDecoratorFactory = (config: TaskServiceConfig):
   };
 };
 
+/**
+ * Get metadata for a TaskService
+ *
+ * @TODO currently unused; remove if not needed
+ */
 export const getTaskServiceMetadata = (target: TaskService): TaskServiceConfig => {
   const name = Reflect.getMetadata('name', target.constructor);
   const description = Reflect.getMetadata('description', target.constructor);

@@ -1,8 +1,6 @@
 /**
  * Types, Interfaces, and Decorators for service controllers
  */
-import { AvailableServices } from './services/';
-
 const { defineMetadata, getMetadata, hasMetadata } = Reflect;
 
 export type TaskId = number;

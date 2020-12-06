@@ -13,19 +13,24 @@ import IPValidationService from './ip-validation';
 
 /**
  * Available Services
+ */
+export const AvailableServices = [IPValidationService];
+
+/**
+ * Available Service Names
  *
  * (TypeScript const assertion coerces its type to literal identity.)
  *
- * @TODO maybe build procedurally from meta-reflection, obviate manual editing
+ * @TODO maybe build procedurally from meta-reflection to obviate manual editing
  */
-export const AvailableServices = ['ip-validation'] as const;
+export const AvailableServiceNames = ['ip-validation'] as const;
 
 /**
  * Type a value to be an Available Service's name
  *
  * @TODO review whether this is a useful export
  */
-export type AvailableServiceName = typeof AvailableServices[number];
+export type AvailableServiceName = typeof AvailableServiceNames[number];
 
 const defaultServicesString = process.env.DEFAULT_SERVICES || 'ip-validation';
 const defaultServicesArray = defaultServicesString.split(',');
@@ -37,7 +42,7 @@ const defaultServicesArray = defaultServicesString.split(',');
  * including Available Services.
  */
 export const DefaultServices: Array<AvailableServiceName> = (defaultServicesArray as Array<AvailableServiceName>).filter(
-  val => AvailableServices.includes(val as AvailableServiceName)
+  val => AvailableServiceNames.includes(val as AvailableServiceName)
 );
 
 // Services

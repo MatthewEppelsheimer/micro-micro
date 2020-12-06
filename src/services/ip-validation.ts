@@ -2,7 +2,7 @@
  * A Service that determines whether an IP address is valid
  */
 import { Service, Task, TaskResult, TaskService } from '../taskServices';
-import { validateIP } from '../utils';
+import { isIPValid } from '../utils';
 
 /**
  * IP Validation Task Service
@@ -25,7 +25,7 @@ export default class IPValidationService extends TaskService {
     const { id, data } = task;
     const { ip } = data;
 
-    const valid = validateIP(ip);
+    const valid = isIPValid(ip);
 
     return Promise.resolve(new TaskResult(id, 'done', { data: { valid } }));
   };

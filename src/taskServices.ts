@@ -3,7 +3,7 @@
  */
 const { defineMetadata, getMetadata, hasMetadata } = Reflect;
 
-export type TaskId = number;
+export type TaskId = string;
 
 export interface Task {
   id: TaskId;

@@ -134,6 +134,8 @@ type TaskServiceDecorator = (target: TaskServiceConstructor) => void;
 
 type TaskServiceDecoratorFactory = (config: TaskServiceConfig) => TaskServiceDecorator;
 
+export const registeredServices: Array<{ name: string; description: string; requiredData?: { [x: string]: any } }> = [];
+
 export const Service: TaskServiceDecoratorFactory = (config: TaskServiceConfig): TaskServiceDecorator => {
   return (target: TaskServiceConstructor): void => {
     const { name, description, requiredData, returnType } = config;
@@ -143,10 +145,18 @@ export const Service: TaskServiceDecoratorFactory = (config: TaskServiceConfig):
       throw new Error(`@Service decorator of ${target.name} passed invalid configuration.`);
     }
 
+    // Store class constructor metadata
     defineMetadata('name', name, target);
     defineMetadata('description', description, target);
     defineMetadata('returnType', returnType, target);
     defineMetadata('requiredData', requiredData, target);
+
+    // Register service
+    registeredServices.push({
+      name,
+      description,
+      requiredData
+    });
   };
 };
 

@@ -7,6 +7,7 @@ export type TaskId = number;
 
 export interface Task {
   id: TaskId;
+  jobId: string;
   service: string; // !!! may conflict w/ /services/index > ServiceName
   data: { [x: string]: any };
 }
@@ -82,10 +83,14 @@ export abstract class TaskService {
   #validateTask = (task: Task): true | { taskIssues: string[] } => {
     const taskIssues: string[] = [];
     const thisService = this.#getMetadataName();
-    const { id, data, service } = task;
+    const { id, data, jobId, service } = task;
 
     if (!id) {
       taskIssues.push(`Task missing id`);
+    }
+
+    if (!jobId) {
+      taskIssues.push(`Task missing jobId`);
     }
 
     if (service !== thisService) {

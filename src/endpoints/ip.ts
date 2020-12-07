@@ -35,8 +35,8 @@ export default class IPServicesController extends EndpointController {
   doTasks = (request: Request, response: Response): RouteHandlerResponse => {
     const { ip } = request.params;
 
-    if (!this.isIPValid(ip)) {
-      return new RouteHandlerResponse(400, `IP address is invalid`);
+    if (domain && !this.isDomainValid(domain)) {
+      return new RouteHandlerResponse(400, `The domain provided with the request is invalid`);
     }
 
     const { services } = request.body;

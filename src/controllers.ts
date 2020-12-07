@@ -6,7 +6,7 @@
 // Types and Abstract for EndpointController
 // ====================
 
-import { isIPValid } from './utils';
+import { isDomainValid, isIPValid } from './utils';
 import construct = Reflect.construct;
 
 /**
@@ -57,13 +57,25 @@ export class RouteHandlerResponse {
 export abstract class EndpointController {
   /**
    * Is string a valid IP address
-   * @TODO rather pointless abstraction of isIPValid export from utils.ts; consider dropping
+   *
+   * @TODO pointless abstraction of isIPValid export from utils.ts; move to IPServicesController & make EndpointController an interface
    */
   protected isIPValid = (ip: string): boolean => {
     if (!ip) {
       return false;
     }
     return isIPValid(ip);
+  };
+
+  /**
+   * Is string a valid domain name
+   * @TODO ditto note on this.isIPValid(), above
+   */
+  protected isDomainValid = (domain: string): boolean => {
+    if (!domain) {
+      return false;
+    }
+    return isDomainValid(domain);
   };
 }
 

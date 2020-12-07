@@ -11,6 +11,7 @@
  */
 import IPValidationService from './ip-validation';
 
+const DEFAULT_SERVICES_CONFIG = process.env.DEFAULT_SERVICES || false;
 /**
  * Available Services
  */
@@ -32,16 +33,16 @@ export const AvailableServiceNames = ['ip-validation'] as const;
  */
 export type AvailableServiceName = typeof AvailableServiceNames[number];
 
-const defaultServicesString = process.env.DEFAULT_SERVICES || 'ip-validation';
-const defaultServicesArray = defaultServicesString.split(',');
+const defaultServices = DEFAULT_SERVICES_CONFIG ? DEFAULT_SERVICES_CONFIG.split(',') : AvailableServiceNames;
 
 /**
  * Services to use by default when a request doesn't specify any
  *
  * Built up from env var with comma-separated list above, enforcing only
- * including Available Services.
+ * including Available Services. Default to all registered services if
+ * none configured.
  */
-export const DefaultServices: Array<AvailableServiceName> = (defaultServicesArray as Array<AvailableServiceName>).filter(
+export const DefaultServices: Array<AvailableServiceName> = (defaultServices as Array<AvailableServiceName>).filter(
   val => AvailableServiceNames.includes(val as AvailableServiceName)
 );
 

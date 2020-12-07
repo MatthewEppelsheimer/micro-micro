@@ -130,12 +130,12 @@ type RouteMethodDecoratorFactory = (path: string) => RouteDecorator;
 const validateDecoratorPath = (path: string, decoratorName: string) => {
   // @TODO Improve this naive regex
   //   It allows likely unintended patterns e.g. `/na:me`
-  const validPattern = /^\/[a-z-:]+/;
+  const validPattern = /^\/[a-z-:]*/;
 
   if (!path.match(validPattern)) {
     throw new Error(
       // @TODO also needs adjustment
-      `@${decoratorName} decorator called with invalid \`path\` "${path}". It must begin with a slash, must contain at least one letter, and may only contain lowercase letters, slashes (-), and colons (:).`
+      `@${decoratorName} decorator called with invalid \`path\` "${path}". It must begin with a slash and may only contain lowercase letters, slashes (-), and colons (:).`
     );
   }
 };

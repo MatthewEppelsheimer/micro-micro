@@ -5,9 +5,11 @@ const { defineMetadata, getMetadata, hasMetadata } = Reflect;
 
 export type TaskId = string;
 
+export type RequestId = string;
+
 export interface Task {
   id: TaskId;
-  jobId: string;
+  requestId: RequestId;
   service: string; // !!! may conflict w/ /services/index > ServiceName
   data: { [x: string]: any };
 }
@@ -19,6 +21,7 @@ export type TaskResultStatus = 'done' | 'fail' | 'reject';
  */
 export class TaskResult {
   readonly id: TaskId;
+  readonly requestId: RequestId;
   // Whether service finished, failed, or rejected the task
   readonly status: TaskResultStatus;
   readonly result: {
@@ -28,13 +31,14 @@ export class TaskResult {
     data?: { [x: string]: any };
   };
 
-  constructor(id: TaskId, status: TaskResultStatus, result?: { [x: string]: any }) {
+  constructor(id: TaskId, requestId: RequestId, status: TaskResultStatus, result?: { [x: string]: any }) {
     // @TODO validate based on status
     //   - if 'done', CAN'T have result.issues; MUST (good idea??) have result.data
     //   - if 'fail', MUST have result.issues; MAY have result.data
     //   - if 'reject', MUST have result.issues; CAN'T have result.data
 
     this.id = id;
+    this.requestId = requestId;
     this.status = status;
     this.result = result || {};
   }
@@ -83,14 +87,14 @@ export abstract class TaskService {
   #validateTask = (task: Task): true | { taskIssues: string[] } => {
     const taskIssues: string[] = [];
     const thisService = this.#getMetadataName();
-    const { id, data, jobId, service } = task;
+    const { id, data, requestId, service } = task;
 
     if (!id) {
       taskIssues.push(`Task missing id`);
     }
 
-    if (!jobId) {
-      taskIssues.push(`Task missing jobId`);
+    if (!requestId) {
+      taskIssues.push(`Task missing requestId`);
     }
 
     if (service !== thisService) {
@@ -111,18 +115,18 @@ export abstract class TaskService {
 
   // Receive tasks to process from workers, return a Promise with the result
   public do = (task: Task): Promise<TaskResult> => {
-    const { id } = task;
+    const { id, requestId } = task;
 
     return new Promise((resolve, reject) => {
       const taskValidation = this.#validateTask(task);
       if (taskValidation !== true) {
-        resolve(new TaskResult(id, 'reject', { issues: taskValidation.taskIssues }));
+        resolve(new TaskResult(id, requestId, 'reject', { issues: taskValidation.taskIssues }));
       }
 
       try {
         resolve(this.processTask(task));
       } catch (error) {
-        return reject(new TaskResult(id, 'fail', { issues: `${error}` }));
+        return reject(new TaskResult(id, requestId, 'fail', { issues: `${error}` }));
       }
     });
   };

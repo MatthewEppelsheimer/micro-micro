@@ -22,11 +22,11 @@ export default class IPValidationService extends TaskService {
    * Process a given task
    */
   processTask = (task: Task): Promise<TaskResult> => {
-    const { id, data } = task;
+    const { data, id, requestId } = task;
     const { ip } = data;
 
     const valid = isIPValid(ip);
 
-    return Promise.resolve(new TaskResult(id, 'done', { data: { valid } }));
+    return Promise.resolve(new TaskResult(id, requestId, 'done', { data: { valid } }));
   };
 }

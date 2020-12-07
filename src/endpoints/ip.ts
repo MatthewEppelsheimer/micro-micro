@@ -2,25 +2,24 @@
  * IP Address Services endpoint
  */
 import { Request, Response } from 'express';
+import { Queue } from 'bullmq';
 
+import { QUEUE } from '../shared';
 import { EndpointController, Endpoint, GET, RouteHandlerResponse } from '../controllers';
 import { AvailableServiceName, AvailableServiceNames, DefaultServices } from '../services/';
-import { registeredServices, Task } from '../taskServices';
+import { registeredServices, RequestId, Task } from '../taskServices';
+import RequestTaskBatchResolver from './ip/RequestTaskBatchResolver';
 import { hashHex } from '../utils';
+
+const REQUEST_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS) || 10000;
 
 /**
  * Hello World endpoint controller
  */
 @Endpoint('/ip')
 export default class IPServicesController extends EndpointController {
-  #queue: { add: (task: Task) => void };
+  readonly #workQueue = new Queue(QUEUE.NAME, QUEUE.CONFIG);
 
-  constructor() {
-    super();
-
-    // @TODO deferred improvement: Create new decorator to dependency-inject this
-    this.#queue = { add: (task: Task): void => {} }; // @TODO WIPPOINT shim for Bull
-  }
   /**
    * Respond with API services available and instructions for their use
    *
@@ -28,12 +27,16 @@ export default class IPServicesController extends EndpointController {
    */
   @GET('/')
   help = (_req: Request): RouteHandlerResponse => {
-    return new RouteHandlerResponse(501, 'NOT YET IMPLEMENTED');
+    return new RouteHandlerResponse(501, `"ip/" and "ip/help/" routes are not yet implemented`);
   };
 
   @GET('/:ip')
-  doTasks = (request: Request, response: Response): RouteHandlerResponse => {
-    const { ip } = request.params;
+  doTasks = async (request: Request, response: Response): Promise<RouteHandlerResponse> => {
+    const { domain, ip } = request.params;
+
+    if (ip && !this.isIPValid(ip)) {
+      return new RouteHandlerResponse(400, `The IP address provided with the request is invalid`);
+    }
 
     if (domain && !this.isDomainValid(domain)) {
       return new RouteHandlerResponse(400, `The domain provided with the request is invalid`);
@@ -76,14 +79,17 @@ export default class IPServicesController extends EndpointController {
       return requiredDataValidation;
     }
 
-    // Generate job ID to associate them. One jobId per request.
-    // One task per service included with request.
-    const jobId = hashHex(new Date().toISOString());
+    // Terminology:
+    // - One "Task" per service in HTTP request.body
+    // - One "Request ID" per HTTP request, representing the tasks requested together as a batch
 
-    // Send tasks to queue, for workers on another process
+    // Generate Request ID to associate them tasks with their batch
+    const requestId = hashHex(new Date().toISOString());
+
+    // Send tasks to job queue, for workers on another process to consume
     const tasksToQueue: Task[] = [];
     serviceTasks.forEach((service, index) => {
-      const id = hashHex(`${jobId}${index}`);
+      const id = hashHex(`${requestId}${index}`);
 
       const data = {
         ip
@@ -91,60 +97,85 @@ export default class IPServicesController extends EndpointController {
 
       tasksToQueue.push({
         id,
-        jobId,
+        requestId: requestId,
         service,
         data
       });
     });
-
-    /**
-     *  @TODO…
-     *    - try/catch with 500 response
-     */
 
     /*
        1.0 default behavior is to wait for all services to resolve before sending response. In the
        future this will only happen when the request body includes `wait: true`, and the default
        will be to send a "pending" response with a URL to poll for results.
     */
-    // const { wait } = request.body <— future
+    // const { wait } = request.body // <— future
     const wait = true;
 
-    return wait
-      ? this.#waitForTasks(request, response, tasksToQueue)
-      : this.#startTasks(request, response, tasksToQueue);
-  };
-
-  // @TODO docs
-  #queueTask = (task: Task): void => {
-    this.#queue.add(task);
+    if (wait) {
+      return await this.#waitForTasks(request, response, tasksToQueue, requestId);
+    } else {
+      // Just a shim for now
+      return this.#startTasks(request, response, tasksToQueue);
+    }
   };
 
   /**
-   * Future default behavior: Send a "pending" response with URL to poll for results
-   *
-   * A new counterpart '/job/:job' route will provide results.
-   *
-   * @TODO
+   * Send an array of Tasks to the work queue
    */
-  #startTasks = (_request: Request, _response: Response, _tasks: Task[]): RouteHandlerResponse => {
-    return new RouteHandlerResponse(500, `Not yet implemented`);
-  };
-
-  // @TODO docs
-  #waitForTasks = (request: Request, response: Response, tasks: Task[]): RouteHandlerResponse => {
-    /**
-     *  @TODO…
-     *    - subscribe to queue updates & respond, BEFORE calling #queueTask() below
-     */
-
+  #queueTasks = (tasks: Task[]): void => {
     tasks.forEach(task => {
-      this.#queueTask(task);
+      const { id, data } = task;
+      this.#workQueue.add(id, data);
     });
-    return new RouteHandlerResponse(501, `WIP`);
   };
 
-  // Validate that the data each service requires is available with the request
+  /**
+   * Queue tasks and return a promise with their results
+   *
+   * @TODO catch & handle errors
+   */
+  #waitForTasks = async (
+    request: Request,
+    response: Response,
+    tasks: Task[],
+    requestId: RequestId
+  ): Promise<RouteHandlerResponse> => {
+    // Start listening to queue events BEFORE queuing tasks
+    const resolver = new RequestTaskBatchResolver(
+      {
+        requestId,
+        tasks
+      },
+      REQUEST_TIMEOUT_MS
+    );
+
+    // Now we can safely queue, knowing we won't miss any notifications
+    this.#queueTasks(tasks);
+
+    const results = await resolver.results();
+
+    if (results.error) {
+      const { code, message } = results.error;
+      return new RouteHandlerResponse(code, message);
+    }
+    return new RouteHandlerResponse(200, results);
+  };
+
+  /**
+   * Shim for future default behavior
+   *
+   * Send a "pending" response with URL to poll for results. A new counterpart '/job/:job' route
+   * will provide results.
+   *
+   * @TODO implement
+   */
+  #startTasks = (_request: Request, _response: Response, _tasks: Task[]): Promise<RouteHandlerResponse> => {
+    return Promise.resolve(new RouteHandlerResponse(500, `'wait' option not yet implemented`));
+  };
+
+  /**
+   * Validate request includes data required by all requested service
+   */
   #validateRequestDataForServices = (request: Request, serviceTasks: string[]): true | RouteHandlerResponse => {
     // Begin by building a requirements map from registered services
     let requirements: { [x: string]: { [x: string]: string[] } } = {};

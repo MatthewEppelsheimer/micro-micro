@@ -5,7 +5,7 @@
  */
 
 import 'reflect-metadata';
-import express from 'express';
+import express, { Request, Response } from 'express';
 
 import { getControllerMetadata } from './controllers';
 import { HelloController, IPServicesController } from './endpoints';
@@ -18,7 +18,7 @@ const app = express();
 // Middleware to parse request body JSON
 app.use(express.json());
 
-const endpoints = [HelloController];
+const endpoints = [HelloController, IPServicesController];
 
 endpoints.forEach(endpointController => {
   const instance = new endpointController();
@@ -27,10 +27,16 @@ endpoints.forEach(endpointController => {
 
   routes.forEach(route => {
     const { path, requestType, methodName } = route;
-    app[requestType](`${prefix}${path}`, (request, response) => {
-      console.log(path, requestType, methodName);
+    // @TODO sanitize request.body members ip, domain, and data
+    // @TODO sanitize input dynamically based registered services' expectations
+    app[requestType](`${prefix}${path}`, async (request: Request, response: Response) => {
+      // @TODO remove this ts-ignore with index typing
       // @ts-ignore — `methodName: string` will be an index key of `instance`
-      instance[methodName](request, response);
+      const result = await instance[methodName](request, response);
+
+      // @TODO either use RouteHandlerResponse.error or remove it
+      const { data, statusCode } = result;
+      response.status(statusCode).send(data);
     });
   });
 });

@@ -283,7 +283,7 @@ export default class IPServicesController extends EndpointController {
     // So, detect and report any conflicts to the user.
     const requirementConflicts: string[] = [];
     Object.keys(requirements).forEach(key => {
-      if (Object.keys(key).length > 1) {
+      if (Object.keys(requirements[key]).length > 1) {
         // @TODO actually build strings describing each conflict for helpful output below
         requirementConflicts.push('issue'); // TEMP
       }
@@ -297,14 +297,14 @@ export default class IPServicesController extends EndpointController {
     }
 
     // Now validate that request.body data meets mapped requirements
-    const providedKeys = (request.body.data && Object.keys(request.body.data)) || false;
+    const providedKeys = Object.keys(requestData);
     const missingDataIssues: string[] = [];
     Object.keys(requirements).forEach(key => {
       if (!providedKeys.includes(key)) {
         // @TODO improve this by naming the services
         missingDataIssues.push(`${key} is missing from your request body but is required for some requested services.`);
       } else {
-        const providedType = typeof providedKeys[key];
+        const providedType = typeof requestData[key];
         const requiredType = Object.keys(requirements[key])[0];
         if (providedType !== requiredType) {
           missingDataIssues.push(

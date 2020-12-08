@@ -10,12 +10,14 @@
  * - Add it to `defaultServicesString` below, if it belongs there
  */
 import IPValidationService from './ip-validation';
+import { TaskService } from '../taskServices';
+import { Concrete } from '../utils';
 
 const DEFAULT_SERVICES_CONFIG = process.env.DEFAULT_SERVICES || false;
 /**
  * Available Services
  */
-export const AvailableServices = [IPValidationService];
+export const AvailableServices: Concrete<TaskService>[] = [IPValidationService];
 
 /**
  * Available Service Names

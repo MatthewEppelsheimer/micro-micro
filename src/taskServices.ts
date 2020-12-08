@@ -54,7 +54,7 @@ export type TaskServiceConfig = {
 
 export abstract class TaskService {
   constructor() {
-    this.#validateInstanceMetadata();
+    this.validateInstanceMetadata();
   }
 
   // service-specific task processing logic implementation
@@ -64,16 +64,16 @@ export abstract class TaskService {
   // Get metadata added by @Service decorator
   //
 
-  #getMetadataName = (): false | string => {
+  protected getMetadataName = (): false | string => {
     return getMetadata('name', TaskService.constructor);
   };
 
-  #getMetadataRequiredData = (): false | { [x: string]: string } => {
+  protected getMetadataRequiredData = (): false | { [x: string]: string } => {
     return getMetadata('requiredData', TaskService.constructor);
   };
 
   // Require @Service decorator use at instantiation time
-  #validateInstanceMetadata = (): void => {
+  protected validateInstanceMetadata = (): void => {
     for (const key of ['name', 'description', 'returnType', 'requiredData']) {
       if (!hasMetadata(key, TaskService.constructor)) {
         throw new Error(`Class instance extending TaskService is missing metadata key ${key}.`);
@@ -84,10 +84,10 @@ export abstract class TaskService {
   /**
    * Confirm Task is meant for this service, and has id and required data
    */
-  #validateTask = (task: Task): true | { taskIssues: string[] } => {
+  protected validateTask = (task: Task): true | { taskIssues: string[] } => {
     const taskIssues: string[] = [];
-    const thisService = this.#getMetadataName();
-    const { id, data, requestId, service } = task;
+    const thisService = this.getMetadataName();
+    const { id, data, requestId, serviceName } = task;
 
     if (!id) {
       taskIssues.push(`Task missing id`);
@@ -101,7 +101,7 @@ export abstract class TaskService {
       taskIssues.push(`Task addressed to service ${service} sent to incorrect service ${thisService}`);
     }
 
-    const requiredData = this.#getMetadataRequiredData();
+    const requiredData = this.getMetadataRequiredData();
     if (requiredData) {
       for (const key in requiredData) {
         if (!data[key]) {
@@ -118,7 +118,7 @@ export abstract class TaskService {
     const { id, requestId } = task;
 
     return new Promise((resolve, reject) => {
-      const taskValidation = this.#validateTask(task);
+      const taskValidation = this.validateTask(task);
       if (taskValidation !== true) {
         resolve(new TaskResult(id, requestId, 'reject', { issues: taskValidation.taskIssues }));
       }
@@ -126,7 +126,7 @@ export abstract class TaskService {
       try {
         resolve(this.processTask(task));
       } catch (error) {
-        return reject(new TaskResult(id, requestId, 'fail', { issues: `${error}` }));
+        resolve(new TaskResult(id, requestId, 'fail', { issues: `${error}` }));
       }
     });
   };
@@ -134,7 +134,7 @@ export abstract class TaskService {
 
 type TaskServiceConstructor = { new (...any: any[]): TaskService };
 
-type TaskServiceDecorator = (target: TaskServiceConstructor) => void;
+type TaskServiceDecorator = <C extends TaskServiceConstructor>(target: C) => C | void;
 
 type TaskServiceDecoratorFactory = (config: TaskServiceConfig) => TaskServiceDecorator;
 
@@ -150,10 +150,10 @@ export const Service: TaskServiceDecoratorFactory = (config: TaskServiceConfig):
     }
 
     // Store class constructor metadata
-    defineMetadata('name', name, target);
-    defineMetadata('description', description, target);
-    defineMetadata('returnType', returnType, target);
-    defineMetadata('requiredData', requiredData, target);
+    defineMetadata('name', name, target.constructor);
+    defineMetadata('description', description, target.constructor);
+    defineMetadata('returnType', returnType, target.constructor);
+    defineMetadata('requiredData', requiredData, target.constructor);
 
     // Register service
     registeredServices.push({

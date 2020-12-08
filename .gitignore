@@ -6,6 +6,10 @@ node_modules
 
 js
 
+# Environmental config
+
+.env
+
 # OS files
 
 .DS_Store

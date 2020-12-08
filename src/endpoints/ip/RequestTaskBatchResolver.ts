@@ -5,12 +5,13 @@
 import Timeout = NodeJS.Timeout;
 import { EventEmitter } from 'events';
 import { QueueEvents } from 'bullmq';
-import Debug from 'debug';
+import Debug from '../../debug';
 
 import { RequestId, Task } from '../../taskServices';
 import { QUEUE } from '../../shared';
 
-const debug = Debug('ip:request-batch-resolver');
+// extension reflects subordination to IPServicesController
+const debug = Debug.extend('ip:endpoint:request-batch-resolver');
 
 /**
  * A batch of tasks with ID

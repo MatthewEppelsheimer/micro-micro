@@ -9,7 +9,7 @@ import { EndpointController, Endpoint, GET } from '../controllers';
  */
 @Endpoint('/hello')
 export default class HelloController extends EndpointController {
-  @GET('/hello')
+  @GET('/')
   hello = (_req: Request, response: Response): void => {
     response.send('Hello world');
   };

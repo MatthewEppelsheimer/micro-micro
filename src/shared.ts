@@ -11,7 +11,7 @@ const { port, hostname, auth } = REDIS_URL;
 export const QUEUE = {
   CONFIG: {
     connection: {
-      host: hostname || 'localhost',
+      host: hostname || process.env.REDIS_HOST || 'localhost',
       port: Number(port) || Number(process.env.REDIS_PORT) || 6379,
       password: auth || process.env.REDIS_PASSWORD || 'pass',
       db: Number(process.env.REDIS_DB) || 0

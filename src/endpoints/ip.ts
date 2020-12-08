@@ -302,11 +302,19 @@ export default class IPServicesController extends EndpointController {
         // @TODO improve this by naming the services
         missingDataIssues.push(`${key} is missing from your request body but is required for some requested services.`);
       } else {
+        /*
+        @TODO BUGFIX: Implementation can result in response message, "'ip' in your request body has
+                      type 'boolean', but is required to have type 'string'.", when passed a valid
+                      domain & no IP. Two bugs:
+                        1. We should be fine with EITHER valid IP or domain.
+                        2. The 'boolean' type here is because ip===false, which should've triggered error
+                           in the previous block. This fix will be higher up: omit missing members, instead of setting them to false, before passing requestData.
+         */
         const providedType = typeof requestData[key];
         const requiredType = Object.keys(requirements[key])[0];
         if (providedType !== requiredType) {
           missingDataIssues.push(
-            `${key} in your request body has type '${providedType}', but is required to have type '${requiredType}'.`
+            `'${key}' in your request body has type '${providedType}', but is required to have type '${requiredType}'.`
           );
         }
       }

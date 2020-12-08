@@ -22,7 +22,6 @@ const debug = Debug.extend('ip:endpoint');
 @Endpoint('/ip')
 export default class IPServicesController extends EndpointController {
   readonly #workQueue = new Queue(QUEUE.NAME, QUEUE.CONFIG);
-
   /**
    * Respond with API services available and instructions for their use
    *
@@ -201,6 +200,9 @@ export default class IPServicesController extends EndpointController {
       const { code, message } = results.error;
       return new RouteHandlerResponse(code, message);
     }
+
+    // @TODO HIGH PRIORITY!! construct response data from results
+
     return new RouteHandlerResponse(200, results);
   };
 

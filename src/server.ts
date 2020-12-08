@@ -1,5 +1,5 @@
 /*
- * Server process
+ * Server process (Heroku "web" process)
  *
  * Handles web connections and sends tasks to the job queue.
  * Uses Node clustering for concurrency (`throng` abstraction).

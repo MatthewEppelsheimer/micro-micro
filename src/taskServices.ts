@@ -1,5 +1,9 @@
 /**
  * Types, Interfaces, and Decorators for service controllers
+ *
+ * @TODO reorganize:
+ *       - split server/worker shared interfaces out into shared territory
+ *       - keep decorators here, rename appropriately
  */
 const { defineMetadata, getMetadata, hasMetadata } = Reflect;
 

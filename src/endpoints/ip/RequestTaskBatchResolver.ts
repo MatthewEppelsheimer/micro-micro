@@ -38,6 +38,14 @@ export interface TaskBatchResult {
 }
 
 /**
+ * lifecycle event type map
+ */
+const LIFECYCLE_EVENTS = {
+  TIMEOUT: 'timeout',
+  DONE: 'done'
+};
+
+/**
  * A utility class that owns a batch of pending job queue tasks
  *
  * This keeps track of its batch's pending tasks and their results when complete, and updates its
@@ -103,7 +111,7 @@ export default class RequestTaskBatchResolver {
 
     // Begin the timeout timer
     this.#timeout = setTimeout(() => {
-      this.#lifecycle.emit('timeout');
+      this.#lifecycle.emit(LIFECYCLE_EVENTS.TIMEOUT);
       // @TODO de-queue any still-pending tasks; avoid wasting resources processing abandoned tasks
     }, timeout);
 
@@ -135,6 +143,13 @@ export default class RequestTaskBatchResolver {
     ['failed', 'removed'].forEach(eventType => {
       this.#queueEvents.on(eventType, this.#eventListenerFailed);
     });
+
+    // Debug events
+    if (debug.enabled) {
+      Object.keys(LIFECYCLE_EVENTS).forEach(eventType => {
+        this.#lifecycle.prependListener(eventType, event => debug(`lifecycle emitted: ${event}`));
+      });
+    }
   }
 
   /**
@@ -143,13 +158,13 @@ export default class RequestTaskBatchResolver {
   results = (): Promise<TaskBatchResult | TaskBatchError> => {
     return new Promise(resolve => {
       try {
-        this.#lifecycle.once('done', () => {
+        this.#lifecycle.once(LIFECYCLE_EVENTS.DONE, () => {
           clearTimeout(this.#timeout);
           resolve(this.#mapResultsToServiceNames());
           this.#cleanup();
         });
 
-        this.#lifecycle.once('timeout', () => {
+        this.#lifecycle.once(LIFECYCLE_EVENTS.TIMEOUT, () => {
           const error: TaskBatchError = {
             error: {
               code: 504,
@@ -210,7 +225,7 @@ export default class RequestTaskBatchResolver {
 
     if (tasksLeft.done) {
       //  Trigger 'done' lifecycle event if that was the last pending task
-      this.#lifecycle.emit('done');
+      this.#lifecycle.emit(LIFECYCLE_EVENTS.DONE);
     }
   };
 

@@ -2,7 +2,6 @@
   "name": "microservice-ipinfo",
   "version": "0.1.0",
   "description": "Performant Node.js REST API to get info for a domain or IP address, for deployment to Heroku",
-  "main": "dist/server.js",
   "scripts": {
     "build": "tsc --outDir js",
     "build:watch": "tsc --watch --outDir js",
@@ -40,5 +39,8 @@
     "express": "^4.17.1",
     "reflect-metadata": "^0.1.13",
     "throng": "^5.0.0"
+  },
+  "engines": {
+    "node": "15.x"
   }
 }

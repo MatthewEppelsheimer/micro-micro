@@ -7,7 +7,7 @@ import { EventEmitter } from 'events';
 import { QueueEvents } from 'bullmq';
 import Debug from '../../debug';
 
-import { RequestId, Task } from '../../taskServices';
+import { RequestId, Task, TaskResult } from '../../taskServices';
 import { QUEUE } from '../../shared';
 
 // extension reflects subordination to IPServicesController
@@ -123,8 +123,8 @@ export default class RequestTaskBatchResolver {
     this.#mapResultsToServiceNames = () => {
       const results: TaskBatchResult = {};
       batch.tasks.forEach(task => {
-        const { id, service } = task;
-        results[service] = this.#jobResults[id as keyof TaskBatchResult];
+        const { id, serviceName } = task;
+        results[serviceName] = this.#jobResults[id as keyof TaskBatchResult];
       });
       return results;
     };
@@ -188,7 +188,7 @@ export default class RequestTaskBatchResolver {
    *
    * If the task is in this batch, store its result and decrement pending task count.
    */
-  #eventListenerCompleted = (jobId: string, result: any): void => {
+  #eventListenerCompleted = (jobId: string, result: TaskResult): void => {
     if (!this.#ownsTask(jobId)) {
       return;
     }

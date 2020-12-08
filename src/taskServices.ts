@@ -10,7 +10,7 @@ export type RequestId = string;
 export interface Task {
   id: TaskId;
   requestId: RequestId;
-  service: string; // !!! may conflict w/ /services/index > ServiceName
+  serviceName: string; // !!! may conflict w/ /services/index > ServiceName
   data: { [x: string]: any };
 }
 
@@ -24,7 +24,7 @@ export class TaskResult {
   readonly requestId: RequestId;
   // Whether service finished, failed, or rejected the task
   readonly status: TaskResultStatus;
-  readonly result: {
+  readonly resultData: {
     // Issues, required in case of failure or rejection
     issues?: string[];
     // Service-specific results from task processing, required when finished
@@ -40,7 +40,7 @@ export class TaskResult {
     this.id = id;
     this.requestId = requestId;
     this.status = status;
-    this.result = result || {};
+    this.resultData = result || {};
   }
 }
 
@@ -97,8 +97,8 @@ export abstract class TaskService {
       taskIssues.push(`Task missing requestId`);
     }
 
-    if (service !== thisService) {
-      taskIssues.push(`Task addressed to service ${service} sent to incorrect service ${thisService}`);
+    if (serviceName !== thisService) {
+      taskIssues.push(`Task addressed to service ${serviceName} sent to incorrect service ${thisService}`);
     }
 
     const requiredData = this.getMetadataRequiredData();

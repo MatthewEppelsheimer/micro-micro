@@ -138,7 +138,7 @@ export default class IPServicesController extends EndpointController {
       tasksToQueue.push({
         id,
         requestId: requestId,
-        service,
+        serviceName: service,
         data
       });
     });

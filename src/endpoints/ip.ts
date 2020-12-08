@@ -59,7 +59,14 @@ export default class IPServicesController extends EndpointController {
     // @TODO HIGH PRIORITY: ACT ON DOMAIN
     const domain = addressType === 'domain' ? address : false;
 
-    const { services } = request.body;
+    const { services, data } = request.body;
+
+    // Bundle validated request params with request body data
+    const requestData = {
+      ...data,
+      ip,
+      domain
+    };
 
     // Validate services type
     if (services && typeof services !== 'string' && Array.isArray(services)) {
@@ -91,7 +98,7 @@ export default class IPServicesController extends EndpointController {
     }
 
     // Validate request meets data requirements for services
-    const requiredDataValidation = this.#validateRequestDataForServices(request, serviceTasks);
+    const requiredDataValidation = this.#validateRequestDataForServices(requestData, serviceTasks);
     if (requiredDataValidation !== true) {
       return requiredDataValidation;
     }
@@ -109,7 +116,8 @@ export default class IPServicesController extends EndpointController {
       const id = hashHex(`${requestId}${index}`);
 
       const data = {
-        ip
+        ip,
+        domain
       };
 
       tasksToQueue.push({
@@ -193,8 +201,11 @@ export default class IPServicesController extends EndpointController {
   /**
    * Validate request includes data required by all requested service
    */
-  #validateRequestDataForServices = (request: Request, serviceTasks: string[]): true | RouteHandlerResponse => {
-    // Begin by building a requirements map from registered services
+  #validateRequestDataForServices = (
+    requestData: { [x: string]: any },
+    serviceTasks: string[]
+  ): true | RouteHandlerResponse => {
+    // Begin building a requirements map from registered services
     let requirements: { [x: string]: { [x: string]: string[] } } = {};
     for (const requiredService of serviceTasks) {
       const registeredService = registeredServices.find(item => item.name === requiredService);

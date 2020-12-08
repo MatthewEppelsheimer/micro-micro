@@ -30,17 +30,34 @@ export default class IPServicesController extends EndpointController {
     return new RouteHandlerResponse(501, `"ip/" and "ip/help/" routes are not yet implemented`);
   };
 
-  @GET('/:ip')
+  @GET('/:address')
   doTasks = async (request: Request, response: Response): Promise<RouteHandlerResponse> => {
-    const { domain, ip } = request.params;
+    const { address } = request.params;
 
-    if (ip && !this.isIPValid(ip)) {
-      return new RouteHandlerResponse(400, `The IP address provided with the request is invalid`);
+    if (!address) {
+      return new RouteHandlerResponse(
+        400,
+        `/ip/<address> route requires passing a domain name or IP address, but none passed`
+      );
     }
 
-    if (domain && !this.isDomainValid(domain)) {
-      return new RouteHandlerResponse(400, `The domain provided with the request is invalid`);
+    let addressType: 'ip' | 'domain' | false = false;
+    if (this.isIPValid(address)) {
+      addressType = 'ip';
+    } else if (this.isDomainValid(address)) {
+      addressType = 'domain';
     }
+
+    if (!addressType) {
+      return new RouteHandlerResponse(
+        400,
+        `'address' parameter passed to /ip/<address> not a valid IP address or domain name`
+      );
+    }
+
+    const ip = addressType === 'ip' ? address : false;
+    // @TODO HIGH PRIORITY: ACT ON DOMAIN
+    const domain = addressType === 'domain' ? address : false;
 
     const { services } = request.body;
 

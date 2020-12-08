@@ -9,9 +9,10 @@ import 'reflect-metadata';
 import express, { Request, Response } from 'express';
 import throng, { ProcessCallback } from 'throng';
 
-import { getControllerMetadata } from './controllers';
+import { EndpointController, getControllerMetadata } from './controllers';
 import { HelloController, IPServicesController } from './endpoints';
 import './services';
+import { Concrete } from './utils';
 import Debug from './debug';
 
 const debug = Debug.extend(`server`);
@@ -27,7 +28,8 @@ const serve = (workerId: Number) => {
   // Middleware to parse request body JSON
   app.use(express.json());
 
-  const endpoints = [HelloController, IPServicesController];
+  // @TODO move this to an export of endpoints/index.ts
+  const endpoints: Concrete<EndpointController>[] = [HelloController, IPServicesController];
 
   endpoints.forEach(endpointController => {
     const instance = new endpointController();

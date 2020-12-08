@@ -10,8 +10,11 @@ import { AvailableServiceName, AvailableServiceNames, DefaultServices } from '..
 import { registeredServices, RequestId, Task } from '../taskServices';
 import RequestTaskBatchResolver from './ip/RequestTaskBatchResolver';
 import { hashHex } from '../utils';
+import Debug from 'debug';
 
 const REQUEST_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS) || 10000;
+
+const debug = Debug('ip:endpoint');
 
 /**
  * Hello World endpoint controller
@@ -32,9 +35,12 @@ export default class IPServicesController extends EndpointController {
 
   @GET('/:address')
   doTasks = async (request: Request, response: Response): Promise<RouteHandlerResponse> => {
+    const debug = Debug('ip:endpoint:get-ip');
+
     const { address } = request.params;
 
     if (!address) {
+      debug(`ipOrDomain param missing; returning 400`);
       return new RouteHandlerResponse(
         400,
         `/ip/<address> route requires passing a domain name or IP address, but none passed`
@@ -43,8 +49,10 @@ export default class IPServicesController extends EndpointController {
 
     let addressType: 'ip' | 'domain' | false = false;
     if (this.isIPValid(address)) {
+      debug(`:address param validated as ip`);
       addressType = 'ip';
     } else if (this.isDomainValid(address)) {
+      debug(`:address param validated as domain`);
       addressType = 'domain';
     }
 
@@ -68,6 +76,8 @@ export default class IPServicesController extends EndpointController {
       domain
     };
 
+    debug(`request.body.services: ${services ? JSON.stringify(services) : 'none'}`);
+
     // Validate services type
     if (services && typeof services !== 'string' && Array.isArray(services)) {
       return new RouteHandlerResponse(404, `request.body.services must be a string or an array.`);
@@ -77,6 +87,7 @@ export default class IPServicesController extends EndpointController {
 
     // If no services requested, use default services
     if (!services) {
+      debug(`using default services: ${DefaultServices.toString()}`);
       serviceTasks = DefaultServices;
     }
 
@@ -86,6 +97,8 @@ export default class IPServicesController extends EndpointController {
         ? ((services as unknown) as AvailableServiceName[])
         : [(services as unknown) as AvailableServiceName];
 
+      debug(`user-requested services: ${services.toString()}`);
+
       let invalidServices: string[] = [];
       serviceTasks.forEach(task => {
         if (!AvailableServiceNames.includes(task)) {
@@ -93,7 +106,9 @@ export default class IPServicesController extends EndpointController {
         }
       });
       if (invalidServices.length) {
-        return new RouteHandlerResponse(404, `Requested services do not exist: ${invalidServices.toString()}`);
+        const invalidString = invalidServices.toString();
+        debug(`returning; requested services do not exist: ${invalidString}`);
+        return new RouteHandlerResponse(404, `Requested services do not exist: ${invalidString}`);
       }
     }
 
@@ -128,6 +143,8 @@ export default class IPServicesController extends EndpointController {
       });
     });
 
+    debug(`tasksToQueue: ${JSON.stringify(tasksToQueue)}`);
+
     /*
        1.0 default behavior is to wait for all services to resolve before sending response. In the
        future this will only happen when the request body includes `wait: true`, and the default
@@ -148,6 +165,7 @@ export default class IPServicesController extends EndpointController {
    * Send an array of Tasks to the work queue
    */
   #queueTasks = (tasks: Task[]): void => {
+    debug(`sending tasks to job queue`);
     tasks.forEach(task => {
       const { id, data } = task;
       this.#workQueue.add(id, data);
@@ -205,6 +223,8 @@ export default class IPServicesController extends EndpointController {
     requestData: { [x: string]: any },
     serviceTasks: string[]
   ): true | RouteHandlerResponse => {
+    const debug = Debug('ip:endpoint:validate-request-data-for-services');
+
     // Begin building a requirements map from registered services
     let requirements: { [x: string]: { [x: string]: string[] } } = {};
     for (const requiredService of serviceTasks) {
@@ -252,7 +272,9 @@ export default class IPServicesController extends EndpointController {
         // e.g. { id: { string: [ 'someService' ] } }
         requirements[key][requiredData[key]].push(name);
       });
-    }
+    } // end for loop over required services
+
+    debug(`requirements map: ${JSON.stringify(requirements)}`);
 
     // We can't resolve any requirement conflicts present in the map we just built.
     // So, detect and report any conflicts to the user.

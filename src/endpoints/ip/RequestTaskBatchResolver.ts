@@ -5,9 +5,12 @@
 import Timeout = NodeJS.Timeout;
 import { EventEmitter } from 'events';
 import { QueueEvents } from 'bullmq';
+import Debug from 'debug';
 
 import { RequestId, Task } from '../../taskServices';
 import { QUEUE } from '../../shared';
+
+const debug = Debug('ip:request-batch-resolver');
 
 /**
  * A batch of tasks with ID
@@ -93,6 +96,8 @@ export default class RequestTaskBatchResolver {
    *                          with a failure
    */
   constructor(batch: TaskBatch, timeout: number) {
+    debug(`new RequestTaskBatchResolver with batch: ${JSON.stringify(batch)}`);
+
     // Create job queue events emitter and store a reference to it
     this.#queueEvents = new QueueEvents(QUEUE.NAME, QUEUE.CONFIG);
 
@@ -172,6 +177,8 @@ export default class RequestTaskBatchResolver {
       return;
     }
 
+    debug(`eventListenerCompleted() called with jobID: ${jobId} and result ${JSON.stringify(result)}`);
+
     this.#jobResults[jobId] = result;
     this.#decrementPendingTasks();
   };
@@ -187,6 +194,8 @@ export default class RequestTaskBatchResolver {
       return;
     }
 
+    debug(`eventListenerFailed() called with jobID: ${jobId}`);
+
     this.#jobResults[jobId] = { error: `Unknown service failure` };
     this.#decrementPendingTasks();
   };
@@ -195,7 +204,11 @@ export default class RequestTaskBatchResolver {
    * Decrement pending tasks, and signal done if none remain
    */
   #decrementPendingTasks = (): void => {
-    if (this.#pendingTaskCountDown.next().done) {
+    const tasksLeft = this.#pendingTaskCountDown.next();
+
+    debug(`decrementPendingTasks() called. Tasks left: ${tasksLeft}`);
+
+    if (tasksLeft.done) {
       //  Trigger 'done' lifecycle event if that was the last pending task
       this.#lifecycle.emit('done');
     }

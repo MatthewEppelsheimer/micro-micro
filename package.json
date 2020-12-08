@@ -8,6 +8,7 @@
     "build:watch": "tsc --watch --outDir js",
     "prettier": "prettier --write \"**/*.{json,ts}\"",
     "serve": "node js/server.js",
+    "serve:worker": "node js/worker.js",
     "test": "echo 'Not implemented'"
   },
   "keywords": [

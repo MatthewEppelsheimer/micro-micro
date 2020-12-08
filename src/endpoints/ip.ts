@@ -79,7 +79,8 @@ export default class IPServicesController extends EndpointController {
     debug(`request.body.services: ${services ? JSON.stringify(services) : 'none'}`);
 
     // Validate services type
-    if (services && typeof services !== 'string' && Array.isArray(services)) {
+    // @TODO review for proper sanitize
+    if (services && typeof services !== 'string' && !Array.isArray(services)) {
       return new RouteHandlerResponse(404, `request.body.services must be a string or an array.`);
     }
 
@@ -93,6 +94,7 @@ export default class IPServicesController extends EndpointController {
 
     // If services requested, validate they are all available
     else {
+      // convert to array
       serviceTasks = Array.isArray(services)
         ? ((services as unknown) as AvailableServiceName[])
         : [(services as unknown) as AvailableServiceName];
@@ -227,6 +229,7 @@ export default class IPServicesController extends EndpointController {
 
     // Begin building a requirements map from registered services
     let requirements: { [x: string]: { [x: string]: string[] } } = {};
+    // ... one required service at a time
     for (const requiredService of serviceTasks) {
       const registeredService = registeredServices.find(item => item.name === requiredService);
       if (!registeredService) {

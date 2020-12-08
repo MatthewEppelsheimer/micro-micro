@@ -1,5 +1,8 @@
 import { parse } from 'url';
 
+// @TODO rename this file to designate it is queue connection-specific
+// @TODO export an instantiated ioredis connection
+//       for re-use in IPServicesController & RequestTaskBatchResolver
 // BullMQ Queue Connection Info
 const REDIS_URL = parse(process.env.REDIS_URL || 'http://127.0.0.1:6379');
 

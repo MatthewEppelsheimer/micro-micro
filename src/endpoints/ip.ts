@@ -206,14 +206,54 @@ export default class IPServicesController extends EndpointController {
 
     const results = await resolver.results();
 
-    if (results.error) {
+    if ('error' in results) {
+      // differentiate TaskBatchResult from TaskBatchError
       const { code, message } = results.error;
       return new RouteHandlerResponse(code, message);
     }
 
-    // @TODO HIGH PRIORITY!! construct response data from results
+    // @TODO implement escaping of JSON output for API!
+    // @TODO make cleanResults type more specific
+    const cleanResults: { services?: any; failed?: any; rejected?: any } = {};
+    Object.keys(results.services).forEach(service => {
+      const { status, result } = results.services[service];
 
-    return new RouteHandlerResponse(200, results);
+      // @TODO improve error messages
+      switch (status) {
+        case 'fail':
+          cleanResults.failed = cleanResults.failed || {
+            meta: `Services that failed due to an issue with an upstream provider.`,
+            services: []
+          };
+
+          cleanResults.failed.services.push(service);
+          break;
+
+        // Note: validateRequestDataForServices() should prevent invalid data for services, so this
+        // indicates a bug in our attempts to not get to this branch.
+        case 'reject':
+          cleanResults.rejected = cleanResults.rejected || {
+            // @TODO implement auto-report to engineers, then update message to "This has been reported to our engineers."
+            meta: `Services that failed due to an error. This is likely due to a bug in the API. Please report this error.`,
+            services: []
+          };
+
+          cleanResults.rejected.services.push(service);
+          break;
+
+        case 'done':
+          cleanResults.services = cleanResults.services || {};
+          const { data } = result;
+          cleanResults.services[service] = data;
+          break;
+
+        default:
+          // @TODO Extract error handling above for reuse, send that instead of throwing
+          throw new Error(`service ${service} passed by resolver with invalid status ${status}`);
+      }
+    });
+
+    return new RouteHandlerResponse(200, cleanResults);
   };
 
   /**

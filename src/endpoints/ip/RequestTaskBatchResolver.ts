@@ -6,7 +6,7 @@ import Timeout = NodeJS.Timeout;
 import { EventEmitter } from 'events';
 import Debug from '../../debug';
 
-import { RequestId, Task } from '../../taskServices';
+import { RequestId, Task, TaskResultStatus } from '../../taskServices';
 import { QueueEventCompleted, getQueueEvents } from '../../shared';
 
 // extension reflects subordination to IPServicesController
@@ -34,7 +34,16 @@ export interface TaskBatchError {
  * A (non-error) result of processing a TaskBatch
  */
 export interface TaskBatchResult {
-  [x: string]: { [x: string]: any };
+  services: {
+    [x: string]: {
+      id: string; // task ID
+      status: TaskResultStatus;
+      result: {
+        data?: any;
+        error?: any;
+      };
+    };
+  };
 }
 
 /**
@@ -84,7 +93,7 @@ export default class RequestTaskBatchResolver {
   /**
    * Store completed tasks' result data, keyed by their jobId
    */
-  readonly #jobResults: TaskBatchResult = {};
+  readonly #jobResults: { [x: string]: any } = {};
 
   /**
    * Utility: Converts TaskBatchResults keys from jobId to service names
@@ -113,10 +122,17 @@ export default class RequestTaskBatchResolver {
 
     // Build task results mapping from task jobId to associated service name from batch data
     this.#mapResultsToServiceNames = () => {
-      const results: TaskBatchResult = {};
+      const results: TaskBatchResult = { services: {} };
       batch.tasks.forEach(task => {
         const { id, serviceName } = task;
-        results[serviceName] = this.#jobResults[id as keyof TaskBatchResult];
+        const rawData = this.#jobResults[id as keyof TaskBatchResult];
+        const { status, resultData } = rawData;
+
+        results.services[serviceName] = {
+          id,
+          status,
+          result: resultData
+        };
       });
       return results;
     };

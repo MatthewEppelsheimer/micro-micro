@@ -12,6 +12,9 @@
  *
  * @TODO research whether "B" and "C" are redundant, performance-wise
  * @TODO review/standardize terminology of different concurrency levels
+ *
+ * @TODO handle redis connection issues
+ *       (simulate by just killing redis dev server)
  */
 
 import 'reflect-metadata';

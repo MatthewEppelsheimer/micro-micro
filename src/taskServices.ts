@@ -7,6 +7,10 @@
  */
 const { defineMetadata, getMetadata, hasMetadata } = Reflect;
 
+import Debug from './debug';
+
+const debug = Debug.extend('service');
+
 export type TaskId = string;
 
 export type RequestId = string;
@@ -14,7 +18,7 @@ export type RequestId = string;
 export interface Task {
   id: TaskId;
   requestId: RequestId;
-  serviceName: string; // !!! may conflict w/ /services/index > ServiceName
+  serviceName: string;
   data: { [x: string]: any };
 }
 
@@ -59,6 +63,7 @@ export type TaskServiceConfig = {
 export abstract class TaskService {
   constructor() {
     this.validateInstanceMetadata();
+    debug.extend(this.getMetadataName() || 'unnamed')(`instantiated`);
   }
 
   // service-specific task processing logic implementation
@@ -119,19 +124,27 @@ export abstract class TaskService {
 
   // Receive tasks to process from workers, return a Promise with the result
   public do = (task: Task): Promise<TaskResult> => {
+    const debugService = debug.extend(this.getMetadataName() || 'unnamed');
+    debugService(`handling task: ${JSON.stringify(task)}`);
+
     const { id, requestId } = task;
 
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       const taskValidation = this.validateTask(task);
       if (taskValidation !== true) {
+        debugService(`failed validation for task id ${id}`);
         resolve(new TaskResult(id, requestId, 'reject', { issues: taskValidation.taskIssues }));
       }
 
       try {
         this.processTask(task).then(result => {
+          debugService(`promise resolving with result: ${JSON.stringify(result)}`);
+
+          resolve(result);
           return result;
         });
       } catch (error) {
+        debugService(`.process() execution threw ${error}`);
         resolve(new TaskResult(id, requestId, 'fail', { issues: `${error}` }));
       }
     });

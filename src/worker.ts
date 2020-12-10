@@ -56,7 +56,7 @@ const work = (throngWorkerId: Number) => {
   const createWorker = (serial: Number): void => {
     const name = `${throngWorkerId}-${serial}`;
 
-    const debugWorker = debug.extend(`worker-${name}`);
+    const debugWorker = debug.extend(`queue:worker-${name}`);
 
     /**
      * Process a job from the queue
@@ -78,11 +78,15 @@ const work = (throngWorkerId: Number) => {
         throw new Error(`service '${service}' not found in serviceDirectory`);
       }
 
-      debugWorker(`delegating task to ${serviceName} service: ${JSON.stringify(task)}`);
+      debugWorker(`delegating job to ${serviceName} service: ${JSON.stringify(task)}`);
+
+      // We need to return a Promise
+      // 'await' here is just for debugging
       const result = await service.do(task);
 
-      debugWorker(`returning task: ${JSON.stringify(result)}`);
-      return result;
+      debugWorker(`returning job: ${JSON.stringify(result)}`);
+
+      return Promise.resolve(result);
     };
 
     const concurrency = QUEUE_WORKER_MAX_JOBS;

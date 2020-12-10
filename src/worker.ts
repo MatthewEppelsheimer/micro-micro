@@ -36,14 +36,16 @@ type ServiceDirectory = { [x: string]: TaskService };
 
 // Map of service names to their instances
 // @TODO research: pros/cons to sharing this with all throngWorkers
-const serviceDirectory: ServiceDirectory = {};
+const serviceInstances: ServiceDirectory = {};
 
 AvailableServices.forEach(target => {
   const instance = new target();
 
-  const { name } = getTaskServiceMetadata(instance);
+  const { name } = getTaskServiceMetadata((target as unknown) as TaskService);
 
-  serviceDirectory[name] = instance;
+  serviceInstances[name] = instance;
+
+  debug.extend('serviceInstances')(`added instance of ${name}`);
 });
 
 /**
@@ -62,15 +64,19 @@ const work = (throngWorkerId: Number) => {
      * This is passed a Job by the Queue
      */
     const processJob = async (job: Job): Promise<TaskResult> => {
-      debugWorker(`processing task ${job.name}`);
+      debugWorker(`processing job ${job.name}`);
 
-      // To get the appropriate service for this task and Task data to pass to the service,
-      // extract the Task-typed data Bull serializes to Job.data when queued:
-      const { data } = job.asJSON();
-      const task = JSON.parse(data);
+      // Bull stores the task to Job.data
+      const { data: task } = job;
+      // const task = JSON.parse(data);
+
       const { serviceName } = task as Task;
 
-      const service = serviceDirectory[serviceName];
+      const service = serviceInstances[serviceName];
+
+      if (!service) {
+        throw new Error(`service '${service}' not found in serviceDirectory`);
+      }
 
       debugWorker(`delegating task to ${serviceName} service: ${JSON.stringify(task)}`);
       const result = await service.do(task);
@@ -81,7 +87,7 @@ const work = (throngWorkerId: Number) => {
 
     const concurrency = QUEUE_WORKER_MAX_JOBS;
 
-    new Worker(name, processJob, { ...QUEUE.CONFIG, concurrency });
+    new Worker(QUEUE.NAME, processJob, { ...QUEUE.CONFIG, concurrency });
     debugWorker(`Worker created`);
   };
 

@@ -12,16 +12,22 @@ import throng, { ProcessCallback } from 'throng';
 import { EndpointController, getControllerMetadata } from './controllers';
 import { HelloController, IPServicesController } from './endpoints';
 import './services';
+import { debugQueueEvents, getQueueEvents } from './shared';
 import { Concrete } from './utils';
-import Debug from './debug';
 
+import Debug from './debug';
 const debug = Debug.extend(`server`);
+
+// Server port to listen on, from environment variable
 const PORT = Number(process.env.PORT) || 3000;
 
 /**
  * Server routine
  */
 const serve = (workerId: Number) => {
+  // Create the Queue Events singleton to ready it for endpoints
+  getQueueEvents();
+
   const debugServe = debug.extend(`worker-${workerId}`);
   const app = express();
 
@@ -56,7 +62,7 @@ const serve = (workerId: Number) => {
   });
 
   app.listen(PORT, () => {
-    console.log(`Worker ${workerId} listening on port ${PORT}`);
+    console.log(`Express: throng-${workerId} listening on port ${PORT}`);
   });
 };
 
@@ -67,13 +73,22 @@ const serve = (workerId: Number) => {
 const killSignals = ['SIGTERM', 'SIGINT'];
 const debugThrong = debug.extend('throng');
 // num workers/threads, based on available CPUs (per env config)
-const count = Number(process.env.WEB_CONCURRENCY) || 1;
+const count = Number(process.env.SERVER_PROCESS_WEB_CONCURRENCY) || Number(process.env.WEB_CONCURRENCY) || 1;
 
 /**
  * throng master process execution callback (debug output only)
  */
 const master: ProcessCallback = () => {
   debugThrong.extend('master')(`starting with ${count} threads`);
+
+  // Debug QueueEvent events
+  // @NOTE This is only in the master process, to avoid duplicate output for each throng worker
+  //       — But see counterpart in `worker()`
+  if (debug.enabled) {
+    // Intentionally NOT using debugThrong here
+    // Debug namespace: `micro-micro:server:queue-events:*`
+    debugQueueEvents(debug);
+  }
 };
 
 /**
@@ -85,6 +100,13 @@ const master: ProcessCallback = () => {
 const worker: any = (id: number, disconnect: () => void) => {
   const debugWorker = debugThrong.extend(`worker-${id}`);
   debugWorker(`starting`);
+
+  // Debug QueueEvent events
+  // @NOTE For debugging individual workers — maybe think of counterpart in `master()` as a global
+  if (debugWorker.enabled) {
+    // Debug namespace: `micro-micro:server:throng:worker-${id}:worker-queue-events:*`
+    debugQueueEvents(debugWorker);
+  }
 
   // the business
   serve(id);

@@ -22,6 +22,7 @@ const debug = Debug.extend('ip:endpoint');
 @Endpoint('/ip')
 export default class IPServicesController extends EndpointController {
   readonly #workQueue = new Queue(QUEUE.NAME, QUEUE.CONFIG);
+
   /**
    * Respond with API services available and instructions for their use
    *
@@ -142,8 +143,6 @@ export default class IPServicesController extends EndpointController {
       });
     });
 
-    debug(`tasksToQueue: ${JSON.stringify(tasksToQueue)}`);
-
     /*
        1.0 default behavior is to wait for all services to resolve before sending response. In the
        future this will only happen when the request body includes `wait: true`, and the default
@@ -161,13 +160,24 @@ export default class IPServicesController extends EndpointController {
   };
 
   /**
-   * Send an array of Tasks to the work queue
+   * Send a task to the queue
    */
-  #queueTasks = (tasks: Task[]): void => {
-    debug(`sending tasks to job queue`);
+  #queueTask = (task: Task): void => {
+    const { id } = task;
+
+    debug.extend('queueTask')(`queuing ${JSON.stringify(task)})`);
+
+    this.#workQueue.add(id, task);
+  };
+
+  /**
+   * Queue each task in an array
+   */
+  #queueTaskBatch = (tasks: Task[]): void => {
+    debug.extend('queueTasks')(`sending tasks to job queue`);
+
     tasks.forEach(task => {
-      const { id, data } = task;
-      this.#workQueue.add(id, data);
+      this.#queueTask(task);
     });
   };
 
@@ -192,7 +202,7 @@ export default class IPServicesController extends EndpointController {
     );
 
     // Now we can safely queue, knowing we won't miss any notifications
-    this.#queueTasks(tasks);
+    this.#queueTaskBatch(tasks);
 
     const results = await resolver.results();
 

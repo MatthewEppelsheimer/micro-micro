@@ -27,6 +27,8 @@ export default class IPValidationService extends TaskService {
 
     const valid = isIPValid(ip);
 
-    return Promise.resolve(new TaskResult(id, requestId, 'done', { data: { valid } }));
+    const result = new TaskResult(id, requestId, 'done', { data: { valid } });
+
+    return Promise.resolve(result);
   };
 }

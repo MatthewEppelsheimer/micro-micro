@@ -26,8 +26,10 @@ import { AvailableServices } from './services';
 const debug = Debug.extend(`queue-workers`);
 
 // @TODO research/experiment with adjustments to these values
-const QUEUE_WORKERS_PER_PROCESS = Number(process.env.WORKERS_PER_PROCESS) || 1;
-const QUEUE_WORKER_MAX_JOBS = Number(process.env.WORKER_MAX_JOBS) || 10;
+const QUEUE_WORKERS_PER_PROCESS =
+  Number(process.env.WORKER_PROCESS_QUEUE_WORKERS_PER_PROCESS) || Number(process.env.QUEUE_WORKERS_PER_PROCESS) || 1;
+const QUEUE_WORKER_MAX_JOBS =
+  Number(process.env.WORKER_PROCESS_QUEUE_WORKER_MAX_JOBS) || Number(process.env.QUEUE_WORKER_MAX_JOBS) || 10;
 
 // Shape of service name->instance map
 type ServiceDirectory = { [x: string]: TaskService };
@@ -80,6 +82,7 @@ const work = (throngWorkerId: Number) => {
     const concurrency = QUEUE_WORKER_MAX_JOBS;
 
     new Worker(name, processJob, { ...QUEUE.CONFIG, concurrency });
+    debugWorker(`Worker created`);
   };
 
   // Create all workers for this process
@@ -97,7 +100,7 @@ const work = (throngWorkerId: Number) => {
 const killSignals = ['SIGTERM', 'SIGINT'];
 const debugThrong = debug.extend('throng');
 // num cluster =threads, based on available CPUs (per env config)
-const count = Number(process.env.WEB_CONCURRENCY) || 1;
+const count = Number(process.env.WORKER_PROCESS_WEB_CONCURRENCY) || Number(process.env.WEB_CONCURRENCY) || 1;
 
 /**
  * throng master process execution callback (debug output only)

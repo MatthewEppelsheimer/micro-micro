@@ -128,7 +128,9 @@ export abstract class TaskService {
       }
 
       try {
-        resolve(this.processTask(task));
+        this.processTask(task).then(result => {
+          return result;
+        });
       } catch (error) {
         resolve(new TaskResult(id, requestId, 'fail', { issues: `${error}` }));
       }

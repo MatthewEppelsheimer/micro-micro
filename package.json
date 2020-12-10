@@ -9,7 +9,8 @@
     "serve": "node js/server.js",
     "serve:worker": "node js/worker.js",
     "test": "echo 'Not implemented'",
-    "debug:redis-cli": "redis-cli -h $REDIS_HOST -p $REDIS_PORT -a $REDIS_PASSWORD"
+    "dev:redis-cli": "redis-cli -h $REDIS_HOST -p $REDIS_PORT -a $REDIS_PASSWORD",
+    "dev:serve:redis": "redis-server $REDIS_CONFIG_PATH --port $REDIS_PORT"
   },
   "keywords": [
     "ip",

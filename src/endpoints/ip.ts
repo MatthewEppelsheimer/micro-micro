@@ -143,7 +143,7 @@ export default class IPServicesController extends EndpointController {
         id,
         requestId: requestId,
         serviceName: service,
-        data
+        data: requestData
       });
     });
 

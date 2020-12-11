@@ -88,11 +88,9 @@ const master: ProcessCallback = () => {
   // Debug QueueEvent events
   // @NOTE This is only in the master process, to avoid duplicate output for each throng worker
   //       — But see counterpart in `worker()`
-  if (debug.enabled) {
-    // Intentionally NOT using debugThrong here
-    // Debug namespace: `micro-micro:server:queue-events:*`
-    debugQueueEvents(debug);
-  }
+  // Intentionally NOT using debugThrong here
+  // Debug namespace: `micro-micro:server:queue-events:*`
+  debugQueueEvents(debug);
 };
 
 /**

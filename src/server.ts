@@ -11,7 +11,6 @@ import throng, { ProcessCallback } from 'throng';
 
 import { EndpointController, getControllerMetadata } from './controllers';
 import { HelloController, IPServicesController } from './endpoints';
-import './services';
 import { debugQueueEvents, getQueueEvents } from './shared';
 import { Concrete } from './utils';
 

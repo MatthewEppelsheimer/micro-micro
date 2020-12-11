@@ -28,6 +28,11 @@ import { AvailableServices } from './services';
 
 const debug = Debug.extend(`queue-workers`);
 
+// Load .env variables
+if (process.env.USE_DOTENV) {
+  require('dotenv').config();
+}
+
 // @TODO research/experiment with adjustments to these values
 const QUEUE_WORKERS_PER_PROCESS =
   Number(process.env.WORKER_PROCESS_QUEUE_WORKERS_PER_PROCESS) || Number(process.env.QUEUE_WORKERS_PER_PROCESS) || 1;

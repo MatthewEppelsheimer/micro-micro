@@ -18,6 +18,11 @@ import { Concrete } from './utils';
 import Debug from './debug';
 const debug = Debug.extend(`server`);
 
+// Load .env variables
+if (process.env.USE_DOTENV) {
+  require('dotenv').config();
+}
+
 // Server port to listen on, from environment variable
 const PORT = Number(process.env.PORT) || 3000;
 

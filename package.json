@@ -5,12 +5,17 @@
   "scripts": {
     "build": "tsc --outDir js",
     "build:watch": "tsc --watch --outDir js",
+    "debug:serve:server": "from-env node --inspect --inspect-port %DEBUG_PORT_SERVER js/server.js",
+    "debug:serve:worker": "from-env node --inspect --inspect-port %DEBUG_PORT_WORKER js/worker.js",
+    "dev:serve": "node js/server.js && node js/worker.js",
+    "dev:serve:redis": "from-env redis-server %REDIS_CONFIG_PATH --port %REDIS_PORT",
+    "dev:serve:server": "USE_DOTENV=1 env node js/server.js",
+    "dev:serve:worker": "USE_DOTENV=1 node js/worker.js",
+    "dev:redis-cli": "from-env redis-cli -h %REDIS_HOST -p %REDIS_PORT -a %REDIS_PASSWORD",
     "prettier": "prettier --write \"**/*.{json,ts}\"",
-    "serve": "node js/server.js",
+    "serve:server": "node js/server.js",
     "serve:worker": "node js/worker.js",
-    "test": "echo 'Not implemented'",
-    "dev:redis-cli": "redis-cli -h $REDIS_HOST -p $REDIS_PORT -a $REDIS_PASSWORD",
-    "dev:serve:redis": "redis-server $REDIS_CONFIG_PATH --port $REDIS_PORT"
+    "test": "echo 'Not implemented'"
   },
   "keywords": [
     "ip",
@@ -28,9 +33,11 @@
     "@types/throng": "^5.0.0",
     "@typescript-eslint/eslint-plugin": "^4.9.0",
     "@typescript-eslint/parser": "^4.9.0",
+    "dotenv": "^8.2.0",
     "eslint": "^7.14.0",
     "eslint-config-prettier": "^6.15.0",
     "eslint-plugin-prettier": "^3.1.4",
+    "from-env": "^1.1.4",
     "prettier": "^2.2.1",
     "typescript": "^4.1.2"
   },

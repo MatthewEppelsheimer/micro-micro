@@ -22,6 +22,7 @@ export interface Task {
   data: { [x: string]: any };
 }
 
+export const TaskResultStatuses = ['done', 'fail', 'reject'];
 export type TaskResultStatus = 'done' | 'fail' | 'reject';
 
 /**

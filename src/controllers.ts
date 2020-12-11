@@ -103,7 +103,7 @@ type EndpointDecoratorFactory = (prefix: string) => EndpointDecorator;
  *
  * Note: All lowercase, for use as index methods called on Express()
  */
-type SupportedRequestTypes = 'get';
+type SupportedRequestTypes = 'get' | 'post';
 
 /**
  * Type of Route decorator
@@ -233,5 +233,16 @@ const Route: RouteDecoratorFactory = (path: string, requestType: SupportedReques
 export const GET: RouteMethodDecoratorFactory = (path: string = '/'): RouteDecorator => {
   return (target, methodName: string): void => {
     Route(path, 'get')(target, methodName);
+  };
+};
+
+/**
+ * Decorator factory to make a controller method a POST request route handler
+ * @param path
+ * @constructor
+ */
+export const POST: RouteMethodDecoratorFactory = (path: string = '/'): RouteDecorator => {
+  return (target, methodName: string): void => {
+    Route(path, 'post')(target, methodName);
   };
 };

@@ -5,7 +5,7 @@ import { Request, Response } from 'express';
 import { Queue } from 'bullmq';
 
 import { QUEUE } from '../shared';
-import { EndpointController, Endpoint, GET, RouteHandlerResponse } from '../controllers';
+import { EndpointController, Endpoint, GET, POST, RouteHandlerResponse } from '../controllers';
 import { AvailableServiceName, AvailableServiceNames, DefaultServices } from '../services/';
 import { registeredServices, RequestId, Task } from '../taskServices';
 import RequestTaskBatchResolver from './ip/RequestTaskBatchResolver';
@@ -33,7 +33,12 @@ export default class IPServicesController extends EndpointController {
     return new RouteHandlerResponse(501, `"ip/" and "ip/help/" routes are not yet implemented`);
   };
 
-  @GET('/:address')
+  /**
+   * Respond with result of processing requested services for a given address
+   *
+   * @TODO review for proper input sanitization
+   */
+  @POST('/:address')
   doTasks = async (request: Request, response: Response): Promise<RouteHandlerResponse> => {
     const debugRoute = debug.extend('route-get-address');
 
@@ -77,7 +82,6 @@ export default class IPServicesController extends EndpointController {
     };
 
     // Validate services type
-    // @TODO review for proper sanitize
     if (services && typeof services !== 'string' && !Array.isArray(services)) {
       return new RouteHandlerResponse(404, `request.body.services must be a string or an array.`);
     }

@@ -3,11 +3,13 @@
  *
  * To add a service:
  *
- * - Add a new @Service-decorated TaskService in this directory
- * - import the new TaskService here
- * - export the new TaskService from here, at end of file
- * - add its name the `AvailableServices` array under imports, below
- * - Add it to `defaultServicesString` below, if it belongs there
+ * 1. Add a new @Service-decorated TaskService in this directory
+ * 2. import the new TaskService here
+ * 3. export the new TaskService from here, at end of file
+ * 4. add its class to `AvailableServices` array below
+ * 5. add its 'name' to `AvailableServiceNames` array below (same as
+ *    config.name passed to @Service in step 1)
+ * 5. Add it to `defaultServicesString` below, if it belongs there
  */
 import IPValidationService from './ip-validation';
 import { TaskService } from '../taskServices';

@@ -28,6 +28,7 @@ export const AvailableServices: Concrete<TaskService>[] = [IPValidationService, 
  *
  * (TypeScript const assertion coerces its type to literal identity.)
  *
+ * @TODO at the very least, build this & AvailableServices from a map. One place to update.
  * @TODO maybe build procedurally from meta-reflection to obviate manual editing
  */
 export const AvailableServiceNames = ['ip-validation', 'mock-worker'] as const;

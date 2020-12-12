@@ -55,9 +55,15 @@ export const getQueueEvents = (): QueueEvents => {
  */
 
 export interface QueueEventCompleted {
-  event: string;
+  event: 'completed';
   jobId: string;
   returnvalue: TaskResult;
+}
+
+export interface QueueEventFailed {
+  event: 'failed';
+  jobId: string;
+  failedReason: string;
 }
 
 /**

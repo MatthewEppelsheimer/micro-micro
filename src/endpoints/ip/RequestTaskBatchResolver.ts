@@ -6,8 +6,8 @@ import Timeout = NodeJS.Timeout;
 import { EventEmitter } from 'events';
 import Debug from '../../debug';
 
-import { RequestId, Task, TaskResultStatus } from '../../taskServices';
-import { QueueEventCompleted, getQueueEvents } from '../../shared';
+import { RequestId, Task, TaskResult, TaskResultStatus } from '../../taskServices';
+import { QueueEventCompleted, getQueueEvents, QueueEventFailed } from '../../shared';
 
 // extension reflects subordination to IPServicesController
 const debug = Debug.extend('ip:endpoint:request-batch-resolver');
@@ -63,6 +63,11 @@ const LIFECYCLE_EVENTS = {
  */
 export default class RequestTaskBatchResolver {
   /**
+   * Batch ID
+   */
+  readonly #requestId: string;
+
+  /**
    * Batch expiration timeout reference
    */
   readonly #timeout: Timeout;
@@ -81,7 +86,7 @@ export default class RequestTaskBatchResolver {
    *
    * Initialized in constructor, with TaskBatch available to get tasks' jobIds.
    */
-  readonly #ownsTask: (eventData: QueueEventCompleted) => boolean;
+  readonly #ownsTask: (eventData: QueueEventCompleted | QueueEventFailed) => boolean;
 
   /**
    * Generator counting down by 1 from number of tasks in the batch as each completes
@@ -116,9 +121,31 @@ export default class RequestTaskBatchResolver {
       // @TODO de-queue any still-pending tasks; avoid wasting resources processing abandoned tasks
     }, timeout);
 
+    // Save batch name
+    // Useful when queue events don't return task data
+    this.#requestId = batch.requestId;
+
     // Initialize ownsTask method with tasks from the batch
     // @TODO ensure this works for all event types' shape
-    this.#ownsTask = (eventData: QueueEventCompleted) => batch.requestId === eventData.returnvalue.requestId;
+    this.#ownsTask = (eventData: QueueEventCompleted | QueueEventFailed) => {
+      switch (eventData.event) {
+        case 'completed':
+          return batch.requestId === eventData.returnvalue.requestId;
+
+        case 'failed':
+          let matches: boolean = false;
+          for (const task of batch.tasks) {
+            if (task.id === eventData.jobId) {
+              matches = true;
+              break;
+            }
+          }
+          return matches;
+
+        default:
+          return false;
+      }
+    };
 
     // Build task results mapping from task jobId to associated service name from batch data
     this.#mapResultsToServiceNames = () => {
@@ -200,13 +227,9 @@ export default class RequestTaskBatchResolver {
   /**
    * Handle queue task 'completed' events
    *
-   * @TODO catch errors
-   *
    * If the task is in this batch, store its result and decrement pending task count.
    */
   #eventListenerCompleted = (eventData: QueueEventCompleted, ...args: any): void => {
-    debug.extend('event-listener-completed')(`passed args: ${JSON.stringify({ eventData, ...args })}`);
-
     if (!this.#ownsTask(eventData)) {
       return;
     }
@@ -224,11 +247,23 @@ export default class RequestTaskBatchResolver {
    * Handle queue events indicating task failure
    *
    * If the task is in this batch, store an error for its result and decrement pending task count.
-   *
-   * @TODO catch errors
    */
-  #eventListenerFailed = (eventData: QueueEventCompleted, ...args: any): void => {
-    // @TODO re-implement
+  #eventListenerFailed = (eventData: QueueEventFailed, ...args: any): void => {
+    if (!this.#ownsTask(eventData)) {
+      return;
+    }
+
+    const { jobId, failedReason } = eventData;
+
+    debug.extend('event-listener-failed')(`job ${jobId}`);
+
+    this.#jobResults[jobId] = {
+      id: jobId,
+      requestId: this.#requestId,
+      resultData: { issues: [failedReason] },
+      status: 'fail'
+    };
+    this.#decrementPendingTasks();
   };
 
   /**

@@ -224,6 +224,7 @@ export default class IPServicesController extends EndpointController {
     const cleanResults: { services?: any; failed?: any; rejected?: any } = {};
     Object.keys(results.services).forEach(service => {
       const { status, result } = results.services[service];
+      const { data } = result;
 
       // @TODO improve error messages
       switch (status) {
@@ -236,21 +237,19 @@ export default class IPServicesController extends EndpointController {
           cleanResults.failed.services[service] = result;
           break;
 
-        // Note: validateRequestDataForServices() should prevent invalid data for services, so this
-        // indicates a bug in our attempts to not get to this branch.
+        // Note: validateRequestDataForServices() should prevent invalid data for services, so 'reject'
+        // indicates a bug in our attempts to not get to this branch... Still a good safeguard though.
         case 'reject':
           cleanResults.rejected = cleanResults.rejected || {
-            // @TODO implement auto-report to engineers, then update message to "This has been reported to our engineers."
-            meta: `Services that failed due to an error. This is likely due to a bug in the API. Please report this error.`,
-            services: []
+            meta: `Services that rejected the request. This is likely due to not including data required by the service in the request.`,
+            services: {}
           };
 
-          cleanResults.rejected.services.push(service);
+          cleanResults.rejected.services[service] = result;
           break;
 
         case 'done':
           cleanResults.services = cleanResults.services || {};
-          const { data } = result;
           cleanResults.services[service] = data;
           break;
 

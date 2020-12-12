@@ -7,7 +7,7 @@ import { EventEmitter } from 'events';
 import Debug from '../../debug';
 
 import { RequestId, Task, TaskResult, TaskResultStatus } from '../../taskServices';
-import { QueueEventCompleted, getQueueEvents, QueueEventFailed } from '../../shared';
+import { QueueEventCompleted, getQueueEvents, QueueEventFailed, QueueEventRemoved } from '../../shared';
 
 // extension reflects subordination to IPServicesController
 const debug = Debug.extend('ip:endpoint:request-batch-resolver');
@@ -86,7 +86,7 @@ export default class RequestTaskBatchResolver {
    *
    * Initialized in constructor, with TaskBatch available to get tasks' jobIds.
    */
-  readonly #ownsTask: (eventData: QueueEventCompleted | QueueEventFailed) => boolean;
+  readonly #ownsTask: (eventData: QueueEventCompleted | QueueEventFailed | QueueEventRemoved) => boolean;
 
   /**
    * Generator counting down by 1 from number of tasks in the batch as each completes
@@ -127,24 +127,36 @@ export default class RequestTaskBatchResolver {
 
     // Initialize ownsTask method with tasks from the batch
     // @TODO ensure this works for all event types' shape
-    this.#ownsTask = (eventData: QueueEventCompleted | QueueEventFailed) => {
+    this.#ownsTask = (eventData: QueueEventCompleted | QueueEventFailed | QueueEventRemoved) => {
+      let matches: boolean = false;
+
       switch (eventData.event) {
         case 'completed':
-          return batch.requestId === eventData.returnvalue.requestId;
+          matches = batch.requestId === eventData.returnvalue.requestId;
+          break;
 
         case 'failed':
-          let matches: boolean = false;
           for (const task of batch.tasks) {
             if (task.id === eventData.jobId) {
               matches = true;
               break;
             }
           }
-          return matches;
+          break;
+
+        case 'removed':
+          for (const task of batch.tasks) {
+            if (task.id === eventData.jobId) {
+              matches = true;
+              break;
+            }
+          }
+          break;
 
         default:
-          return false;
+          throw new Error(`Queue sent unrecognized event data: ${JSON.stringify(eventData)}`);
       }
+      return matches;
     };
 
     // Build task results mapping from task jobId to associated service name from batch data
@@ -178,12 +190,9 @@ export default class RequestTaskBatchResolver {
 
     // Subscribe listeners to EventQueue events
     const queueEvents = getQueueEvents();
-
     queueEvents.on('completed', this.#eventListenerCompleted);
-
-    ['failed', 'removed'].forEach(eventType => {
-      queueEvents.on(eventType, this.#eventListenerFailed);
-    });
+    queueEvents.on('failed', this.#eventListenerFailed);
+    queueEvents.on('removed', this.#eventListenerRemoved);
 
     // Debug resolver lifecyle events
     if (debug.enabled) {
@@ -229,7 +238,7 @@ export default class RequestTaskBatchResolver {
    *
    * If the task is in this batch, store its result and decrement pending task count.
    */
-  #eventListenerCompleted = (eventData: QueueEventCompleted, ...args: any): void => {
+  #eventListenerCompleted = (eventData: QueueEventCompleted): void => {
     if (!this.#ownsTask(eventData)) {
       return;
     }
@@ -248,7 +257,7 @@ export default class RequestTaskBatchResolver {
    *
    * If the task is in this batch, store an error for its result and decrement pending task count.
    */
-  #eventListenerFailed = (eventData: QueueEventFailed, ...args: any): void => {
+  #eventListenerFailed = (eventData: QueueEventFailed): void => {
     if (!this.#ownsTask(eventData)) {
       return;
     }
@@ -262,6 +271,39 @@ export default class RequestTaskBatchResolver {
       requestId: this.#requestId,
       resultData: { issues: [failedReason] },
       status: 'fail'
+    };
+    this.#decrementPendingTasks();
+  };
+
+  /**
+   * Handle queue events indicating removal from queue
+   *
+   * @TODO TEST
+   *
+   * This is expected to eventually happen when the job is completed (I think), but if it happens before we're done processing it, we need to treat it as a failure.
+   */
+  #eventListenerRemoved = (eventData: QueueEventRemoved, ...args: any): void => {
+    if (!this.#ownsTask(eventData)) {
+      return;
+    }
+
+    const debugRemoved = debug.extend('event-listener-removed');
+
+    const { jobId } = eventData;
+
+    // Do nothing if job already processed
+    if (this.#jobResults[jobId]) {
+      debugRemoved(`job ${jobId} processing already finished earlier`);
+
+      return;
+    }
+
+    debugRemoved(`job ${jobId}`);
+
+    this.#jobResults[jobId] = {
+      id: jobId,
+      requestId: this.#requestId,
+      resultData: { issues: ['Job removed from queue before processing for unknown reason'] }
     };
     this.#decrementPendingTasks();
   };

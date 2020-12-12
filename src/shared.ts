@@ -66,6 +66,11 @@ export interface QueueEventFailed {
   failedReason: string;
 }
 
+export interface QueueEventRemoved {
+  event: 'removed';
+  jobId: string;
+}
+
 /**
  * Debug queue events
  */

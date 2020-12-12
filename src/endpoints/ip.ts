@@ -2,7 +2,7 @@
  * IP Address Services endpoint
  */
 import { Request, Response } from 'express';
-import { Queue } from 'bullmq';
+import { JobsOptions, Queue } from 'bullmq';
 
 import { QUEUE } from '../shared';
 import { EndpointController, Endpoint, GET, POST, RouteHandlerResponse } from '../controllers';
@@ -171,7 +171,10 @@ export default class IPServicesController extends EndpointController {
 
     debug.extend('queueTask')(`queuing ${JSON.stringify(task)})`);
 
-    this.#workQueue.add(id, task);
+    const options: JobsOptions = {
+      jobId: id // Override queue's default serial ID assignment
+    };
+    this.#workQueue.add(id, task, options);
   };
 
   /**

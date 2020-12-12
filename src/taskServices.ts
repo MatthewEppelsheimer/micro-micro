@@ -137,17 +137,12 @@ export abstract class TaskService {
         resolve(new TaskResult(id, requestId, 'reject', { issues: taskValidation.taskIssues }));
       }
 
-      try {
-        this.processTask(task).then(result => {
-          debugService(`promise resolving with result: ${JSON.stringify(result)}`);
+      this.processTask(task).then(result => {
+        debugService(`promise resolving with result: ${JSON.stringify(result)}`);
 
-          resolve(result);
-          return result;
-        });
-      } catch (error) {
-        debugService(`.process() execution threw ${error}`);
-        resolve(new TaskResult(id, requestId, 'fail', { issues: `${error}` }));
-      }
+        resolve(result);
+        return result;
+      });
     });
   };
 }

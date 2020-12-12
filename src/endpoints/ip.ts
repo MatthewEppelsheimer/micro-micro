@@ -220,13 +220,15 @@ export default class IPServicesController extends EndpointController {
     }
 
     // @TODO implement escaping of JSON output for API!
-    // @TODO make cleanResults type more specific
-    const cleanResults: { services?: any; failed?: any; rejected?: any } = {};
+    const cleanResults: {
+      services?: { [x: string]: any };
+      failed?: { meta: string; services: { [x: string]: any } };
+      rejected?: { meta: string; services: { [x: string]: any } };
+    } = {};
     Object.keys(results.services).forEach(service => {
       const { status, result } = results.services[service];
       const { data } = result;
 
-      // @TODO improve error messages
       switch (status) {
         case 'fail':
           cleanResults.failed = cleanResults.failed || {
@@ -254,7 +256,6 @@ export default class IPServicesController extends EndpointController {
           break;
 
         default:
-          // @TODO Extract error handling above for reuse, send that instead of throwing
           throw new Error(`service ${service} passed by resolver with invalid status ${status}`);
       }
     });

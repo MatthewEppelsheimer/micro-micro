@@ -230,10 +230,10 @@ export default class IPServicesController extends EndpointController {
         case 'fail':
           cleanResults.failed = cleanResults.failed || {
             meta: `Services that failed due to an issue with an upstream provider.`,
-            services: []
+            services: {}
           };
 
-          cleanResults.failed.services.push(service);
+          cleanResults.failed.services[service] = result;
           break;
 
         // Note: validateRequestDataForServices() should prevent invalid data for services, so this

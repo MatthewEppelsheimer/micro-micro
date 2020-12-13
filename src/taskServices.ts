@@ -59,6 +59,9 @@ export class TaskResult {
 // be string-indexable and either strings OR the oneOf array type.
 // But there doesn't seem to be a better way to express this, and this
 // works since TS only cares that values satisfies at least one of a union.
+// @TODO document: requiredData.oneOf must be an array of objects, each with two keys; each object
+//       represents a pair of which there must be at least one in the request body.
+//  @TODO s/oneOf/oneOrMore ???
 type TaskServiceRequiredDataConfig = { oneOf: Array<{ [x: string]: string }> } | { [x: string]: string };
 
 // decorator configuration

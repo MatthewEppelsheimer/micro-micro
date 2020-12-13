@@ -53,12 +53,20 @@ export class TaskResult {
   }
 }
 
+// Type for requiredData metadata
+//
+// This union sort of feels like cheating: Object members should
+// be string-indexable and either strings OR the oneOf array type.
+// But there doesn't seem to be a better way to express this, and this
+// works since TS only cares that values satisfies at least one of a union.
+type TaskServiceRequiredDataConfig = { oneOf: Array<{ [x: string]: string }> } | { [x: string]: string };
+
 // decorator configuration
 export type TaskServiceConfig = {
   name: string; // Unique name of the service
   description: string; // API user-facing description of provided service
-  returnType: string | { [x: string]: any }; //
-  requiredData?: { [x: string]: any }; // Data (params) required, if any
+  returnType: string | { [x: string]: any }; // @TODO remove; unused
+  requiredData?: TaskServiceRequiredDataConfig; // Data (params) required, if any
 };
 
 export abstract class TaskService {
@@ -78,7 +86,10 @@ export abstract class TaskService {
     return getMetadata('name', TaskService.constructor);
   };
 
-  protected getMetadataRequiredData = (): false | { [x: string]: string } => {
+  protected getMetadataRequiredData = ():
+    | undefined
+    | { oneOf?: Array<{ [x: string]: string }> }
+    | { [index: string]: string } => {
     return getMetadata('requiredData', TaskService.constructor);
   };
 

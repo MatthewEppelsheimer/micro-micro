@@ -285,6 +285,9 @@ export default class IPServicesController extends EndpointController {
   ): true | RouteHandlerResponse => {
     const debugValidate = debug.extend('validate-request-data-for-services');
 
+    debugValidate(`requestData: ${JSON.stringify(requestData)}`);
+    debugValidate(`serviceTasks: ${JSON.stringify(serviceTasks)}`);
+
     // Begin building a requirements map from registered services
     let requirements: { [x: string]: { [x: string]: string[] } } = {};
     // ... one required service at a time

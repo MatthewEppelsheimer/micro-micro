@@ -12,6 +12,7 @@
  */
 import IPValidationService from './ip-validation';
 import JobWorkerMock from './job-worker-mock';
+import RDAPService from './rdap';
 import { TaskService } from '../taskServices';
 import { Concrete } from '../utils';
 
@@ -20,7 +21,7 @@ const DEFAULT_SERVICES_CONFIG = process.env.DEFAULT_SERVICES || false;
 /**
  * Available Services
  */
-export const AvailableServices: Concrete<TaskService>[] = [IPValidationService, JobWorkerMock];
+export const AvailableServices: Concrete<TaskService>[] = [IPValidationService, JobWorkerMock, RDAPService];
 
 /**
  * Available Service Names
@@ -30,7 +31,7 @@ export const AvailableServices: Concrete<TaskService>[] = [IPValidationService, 
  * @TODO at the very least, build this & AvailableServices from a map. One place to update.
  * @TODO maybe build procedurally from meta-reflection to obviate manual editing
  */
-export const AvailableServiceNames = ['ip-validation', 'mock-worker'] as const;
+export const AvailableServiceNames = ['ip-validation', 'mock-worker', 'rdap'] as const;
 
 /**
  * Type a value to be an Available Service's name
@@ -53,4 +54,4 @@ export const DefaultServices: Array<AvailableServiceName> = (defaultServices as 
 );
 
 // Services
-export { IPValidationService, JobWorkerMock };
+export { IPValidationService, JobWorkerMock, RDAPService };

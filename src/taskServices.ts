@@ -109,6 +109,7 @@ export abstract class TaskService {
     const taskIssues: string[] = [];
     const thisService = this.getMetadataName();
     const { id, data, requestId, serviceName } = task;
+    const dataKeys = Object.keys(data);
 
     if (!id) {
       taskIssues.push(`Task missing id`);
@@ -125,7 +126,42 @@ export abstract class TaskService {
     const requiredData = this.getMetadataRequiredData();
     if (requiredData) {
       for (const key in requiredData) {
-        if (!data[key]) {
+        // Skip inherited properties
+        if (!requiredData.hasOwnProperty(key)) {
+          continue;
+        }
+
+        // Handle the oneOf special case
+        if (key === 'oneOf') {
+          const { oneOf } = requiredData;
+          if (typeof oneOf !== 'object' || oneOf === null) {
+            // The error isn't with the request
+            // In the @Service config, oneOf type must be an array of
+            // objects with two keys
+            taskIssues.push(
+              `Invalid ${serviceName} service configuration. This is a server error. Please report this. (reference: lucky-llamas)`
+            );
+            continue;
+          }
+          for (const pair of oneOf as Array<{ [x: string]: string }>) {
+            const pairKeys = Object.keys(pair);
+            if (pairKeys.length !== 2) {
+              // The error isn't with the request
+              // In the @Service config, oneOf type must be an array of
+              // objects with two keys
+              taskIssues.push(
+                `Invalid ${serviceName} service configuration. This is a server error. Please report this. (reference: lucky-labradors)`
+              );
+              continue;
+            }
+            if (!pairKeys.some(option => dataKeys.includes(option))) {
+              taskIssues.push(`Task missing either ${pairKeys.join(' or ')} data, required by ${thisService}`);
+            }
+          }
+        }
+
+        // Handle non-special cases
+        else if (!data[key]) {
           taskIssues.push(`Task missing \`${key}\` data required by ${thisService}`);
         }
       }
@@ -173,6 +209,26 @@ export const Service: TaskServiceDecoratorFactory = (config: TaskServiceConfig):
     // Invalidate decorator usage if any required config strings are empty
     if (!name || !description || !returnType) {
       throw new Error(`@Service decorator of ${target.name} passed invalid configuration.`);
+    }
+
+    if (requiredData) {
+      const { oneOf } = requiredData;
+      if (oneOf) {
+        const oneOfErrorMessage = `@Service decorator of ${target.name} passed invalid configuration: requiredData.oneOf must be an array of objects, each with two keys`;
+
+        if (!Array.isArray(oneOf)) {
+          throw new Error(`${oneOfErrorMessage} [Instance: 1]`);
+        }
+
+        for (const pair of oneOf) {
+          const pairKeys = Object.keys(pair);
+          if (pairKeys.length !== 2) {
+            throw new Error(`${oneOfErrorMessage} [Instance: 2; pair: ${pair}; pairKeys: ${pairKeys}]`);
+          }
+
+          // @TODO make this even more strict by checking that `typeof === 'string'` for each pairs' member values
+        }
+      }
     }
 
     // Store class constructor metadata

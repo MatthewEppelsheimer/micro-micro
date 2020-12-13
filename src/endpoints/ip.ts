@@ -325,12 +325,21 @@ export default class IPServicesController extends EndpointController {
       // }
       // ```
       Object.keys(requiredData).forEach(key => {
-        // e.g. { id: {} }
-        requirements[key] = requirements[key] || {};
-        // e.g. { id: { string: [] } }
-        requirements[key][requiredData[key]] = requirements[key][requiredData[key]] || [];
-        // e.g. { id: { string: [ 'someService' ] } }
-        requirements[key][requiredData[key]].push(name);
+        // oneOf is a special case
+        if ('oneOf' === key) {
+          requirements.oneOf = requirements.oneOf || {};
+          requirements.oneOf[name] = requiredData[key];
+        } else {
+          // Initialize nested structure
+          // e.g. { id: {} }
+          requirements[key] = requirements[key] || {};
+          // e.g. { id: { string: [] } }
+          requirements[key][requiredData[key]] = requirements[key][requiredData[key]] || [];
+
+          // Now add the service name to the array
+          // e.g. { id: { string: [ 'someService' ] } }
+          requirements[key][requiredData[key]].push(name);
+        }
       });
     } // end for loop over required services
 
@@ -357,7 +366,24 @@ export default class IPServicesController extends EndpointController {
     const providedKeys = Object.keys(requestData);
     const missingDataIssues: string[] = [];
     Object.keys(requirements).forEach(key => {
-      if (!providedKeys.includes(key)) {
+      // oneOf is a special case in our map
+      if ('oneOf' === key) {
+        // iterate over each service in the map
+        Object.keys(requirements.oneOf).forEach(service => {
+          // iterate over each pair the service requires
+          requirements[key][service].forEach(pair => {
+            const pairKeys = Object.keys(pair);
+
+            if (!pairKeys.some(option => providedKeys.includes(option))) {
+              missingDataIssues.push(
+                `${service} service requires either ${pairKeys.join(
+                  ' or '
+                )}, but neither are included with the request body`
+              );
+            }
+          });
+        });
+      } else if (!providedKeys.includes(key)) {
         // @TODO improve this by naming the services
         missingDataIssues.push(`${key} is missing from your request body but is required for some requested services.`);
       } else {

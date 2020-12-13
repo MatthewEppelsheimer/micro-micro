@@ -5,11 +5,10 @@
  *
  * 1. Add a new @Service-decorated TaskService in this directory
  * 2. import the new TaskService here
- * 3. export the new TaskService from here, at end of file
- * 4. add its class to `AvailableServices` array below
- * 5. add its 'name' to `AvailableServiceNames` array below (same as
+ * 3. add its 'name' to `AvailableServiceNames` array below (same as
  *    config.name passed to @Service in step 1)
- * 5. Add it to `defaultServicesString` below, if it belongs there
+ * 4. add its class to `AvailableServices` array below
+ * 5. export the new TaskService from here, at end of file
  */
 import IPValidationService from './ip-validation';
 import JobWorkerMock from './job-worker-mock';

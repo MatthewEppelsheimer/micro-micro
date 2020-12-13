@@ -76,10 +76,11 @@ export default class IPServicesController extends EndpointController {
 
     // Bundle validated request params with request body data
     const requestData = {
-      ...data,
-      ip,
-      domain
+      ...data
     };
+    // Prefer :address route params over ip/domain from request.body.data
+    ip && (requestData.ip = ip);
+    domain && (requestData.domain = domain);
 
     // Validate services type
     if (services && typeof services !== 'string' && !Array.isArray(services)) {

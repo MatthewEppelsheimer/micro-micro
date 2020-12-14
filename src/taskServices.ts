@@ -185,12 +185,12 @@ export abstract class TaskService {
     return new Promise(resolve => {
       const taskValidation = this.validateTask(task);
       if (taskValidation !== true) {
-        debugService(`failed validation for task id ${id}`);
+        debugService.extend('result')(`failed validation for task id ${id}`);
         resolve(new TaskResult(id, requestId, 'reject', { issues: taskValidation.taskIssues }));
       }
 
       this.processTask(task).then(result => {
-        debugService(`promise resolving with result: ${JSON.stringify(result)}`);
+        debugService.extend('result')(`promise resolving with result: ${JSON.stringify(result)}`);
 
         resolve(result);
         return result;

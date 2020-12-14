@@ -25,6 +25,13 @@ export interface Task {
 export const TaskResultStatuses = ['done', 'fail', 'partial-fail', 'reject'];
 export type TaskResultStatus = 'done' | 'fail' | 'partial-fail' | 'reject';
 
+export interface TaskResultData {
+  // Issues, required in case of failure or rejection
+  issues?: string[];
+  // Service-specific results from task processing, required when finished
+  data?: { [x: string]: any };
+}
+
 /**
  * Object with data resulting from processing a Task
  */
@@ -33,12 +40,7 @@ export class TaskResult {
   readonly requestId: RequestId;
   // Whether service finished, failed, or rejected the task
   readonly status: TaskResultStatus;
-  readonly resultData: {
-    // Issues, required in case of failure or rejection
-    issues?: string[];
-    // Service-specific results from task processing, required when finished
-    data?: { [x: string]: any };
-  };
+  readonly resultData: TaskResultData;
 
   constructor(id: TaskId, requestId: RequestId, status: TaskResultStatus, result?: { [x: string]: any }) {
     // @TODO validate based on status

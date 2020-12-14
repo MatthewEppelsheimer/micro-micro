@@ -3,6 +3,7 @@
   "files": ["src/server.ts", "src/worker.ts"],
   "compilerOptions": {
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "emitDecoratorMetadata": true,
+    "lib": ["ES2020"]
   }
 }

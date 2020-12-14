@@ -224,6 +224,7 @@ export default class IPServicesController extends EndpointController {
     const cleanResults: {
       services?: { [x: string]: any };
       failed?: { meta: string; services: { [x: string]: any } };
+      partialFail?: { meta: string; services: { [x: string]: any } };
       rejected?: { meta: string; services: { [x: string]: any } };
     } = {};
     Object.keys(results.services).forEach(service => {
@@ -240,6 +241,14 @@ export default class IPServicesController extends EndpointController {
           cleanResults.failed.services[service] = result;
           break;
 
+        case 'partial-fail':
+          cleanResults.partialFail = cleanResults.partialFail || {
+            meta: `Services that partially failed (see services.[serviceName].issues) and partially succeeded (see services.[serviceName].data)`,
+            services: {}
+          };
+
+          cleanResults.partialFail.services[service] = result;
+          break;
         // Note: validateRequestDataForServices() should prevent invalid data for services, so 'reject'
         // indicates a bug in our attempts to not get to this branch... Still a good safeguard though.
         case 'reject':

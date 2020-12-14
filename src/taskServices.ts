@@ -22,8 +22,8 @@ export interface Task {
   data: { [x: string]: any };
 }
 
-export const TaskResultStatuses = ['done', 'fail', 'reject'];
-export type TaskResultStatus = 'done' | 'fail' | 'reject';
+export const TaskResultStatuses = ['done', 'fail', 'partial-fail', 'reject'];
+export type TaskResultStatus = 'done' | 'fail' | 'partial-fail' | 'reject';
 
 /**
  * Object with data resulting from processing a Task
